@@ -73,7 +73,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'Project_TernNest.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
