@@ -11,21 +11,31 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+import environ
+
+import apps.core.apps
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env = environ.Env(
+    DEBUG=(bool, False),
+    MYSQL=(bool, False),
+    AI_AGENT_ENABLED=(bool, False),
+)
+
+environ.Env.read_env(BASE_DIR / ".env", parse_coments=True)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-na6)f1p45)pj*&fe8a(5wmxq9!99g*3)%=32mw7=4%#^e^0k@^'
+SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool("DEBUG", default=False)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 
 # Application definition
@@ -37,7 +47,21 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    "rest_framework",
+
+    "apps.core.apps.CoreConfig",
+    "apps.accounts.apps.AccountsConfig",
+    "apps.listings.apps.ListingsConfig",
+    "apps.bookings.apps.BookingsConfig",
+    "apps.reviews.apps.ReviewsConfig",
+    "apps.ai_assistant.apps.AiAssistantConfig",
 ]
+
+AUTH_USER_MODEL = "accounts.User"
+
+API_VERSION = env("API_VERSION", default="v1")
+API_PREFIX = env("API_PREFIX", default="api")
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -73,12 +97,27 @@ WSGI_APPLICATION = 'Project_TernNest.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if env.bool("MYSQL", default=False):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": env("MYSQL_DATABASE"),
+            "USER": env("MYSQL_USER"),
+            "PASSWORD": env("MYSQL_PASSWORD"),
+            "HOST": env("MYSQL_HOST", default="localhost"),
+            "PORT": env("MYSQL_PORT", default="3306"),
+            "OPTIONS": {
+                "charset": "utf8mb4",
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -103,9 +142,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = env("DJANGO_LANGUAGE_CODE",default="en-us",)
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = env("DJANGO_TIME_ZONE",default="UTC",)
 
 USE_I18N = True
 
@@ -126,3 +165,19 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+#Media
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
+
+# AI Agent
+
+AI_AGENT_ENABLED = env.bool("AI_AGENT_ENABLED",default=False,)
+
+AI_PROVIDER = env("AI_PROVIDER",default="openai",)
+
+AI_MODEL = env("AI_MODEL",default="",)
+
+OPENAI_API_KEY = env("OPENAI_API_KEY",default="",)
+
+GEMINI_API_KEY = env("GEMINI_API_KEY",default="",)

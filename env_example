@@ -1,0 +1,58 @@
+# ============================================================
+# DJANGO
+# ============================================================
+
+SECRET_KEY=your-secret-key
+#Django secret key.
+DEBUG=false/True
+#Development mode: True  = local development \ False = production
+ALLOWED_HOSTS=127.0.0.1,localhost
+# Hosts allowed to access the Django application. Multiple hosts are separated by commas.
+
+# ============================================================
+# DJANGO REST FRAMEWORK
+# ============================================================
+
+API_VERSION=v1
+# Default API version used by the project.
+API_PREFIX=api
+# Base prefix for REST API endpoints.
+
+# ============================================================
+# DATABASE
+# ============================================================
+
+MYSQL=False
+
+MYSQL_DATABASE=your_database
+MYSQL_USER=your_user
+MYSQL_PASSWORD=your_password
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+
+# ============================================================
+# AI AGENT
+# ============================================================
+
+AI_AGENT_ENABLED=false/True
+# Enable or disable the AI agent application.
+
+AI_PROVIDER=openai
+# AI provider. Possible examples: openai, gemini
+
+OPENAI_API_KEY=
+# OpenAI API key.
+GEMINI_API_KEY=
+# Google Gemini API key.
+
+AI_MODEL=
+# Default model used by the agent.
+
+# ============================================================
+# TIMEZONE / LANGUAGE
+# ============================================================
+
+DJANGO_TIME_ZONE=UTC
+# Application timezone. UTC, Europe/Berlin
+DJANGO_LANGUAGE_CODE=en-us
+# Default Django language.
