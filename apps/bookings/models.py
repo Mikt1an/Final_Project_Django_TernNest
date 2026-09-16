@@ -17,8 +17,8 @@ class Booking(TimeStampedModel):
     guest = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="bookings",)
     listing = models.ForeignKey(Listing, on_delete=models.PROTECT, related_name="bookings",)
 
-    check_in = models.DateField()
-    check_out = models.DateField()
+    check_in = models.DateTimeField()
+    check_out = models.DateTimeField()
     book_days = models.PositiveIntegerField(validators=[MinValueValidator(1)],)
 
     guests = models.PositiveIntegerField(validators=[MinValueValidator(1)],)
@@ -47,4 +47,33 @@ class Booking(TimeStampedModel):
             f"{self.guest} - {self.listing.title} "
             f"({self.check_in} - {self.check_out})"
             f"({self.book_days} days)"
+        )
+
+
+class BlockedPeriod(TimeStampedModel):
+    listing = models.ForeignKey(
+        Listing,
+        on_delete=models.PROTECT,
+        related_name="blocked_periods",
+    )
+    start_at = models.DateTimeField()
+    end_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ("start_at",)
+        verbose_name = "Blocked period"
+        verbose_name_plural = "Blocked periods"
+        constraints = (
+            models.CheckConstraint(
+                condition=models.Q(
+                    end_at__gt=models.F("start_at")
+                ),
+                name="blocked_period_end_after_start",
+            ),
+        )
+
+    def __str__(self):
+        return (
+            f"{self.listing.title}: "
+            f"{self.start_at} - {self.end_at}"
         )

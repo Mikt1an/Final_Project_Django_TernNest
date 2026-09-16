@@ -2,10 +2,13 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 from apps.core.models import TimeStampedModel
+from apps.accounts.managers import UserManager
 from apps.accounts.validators import phone_number_validator
+
 
 # Create your models here.
 class User(AbstractUser, TimeStampedModel):
+    username = None
 
     first_name = models.CharField(max_length=150,)
     last_name = models.CharField(max_length=150,)
@@ -16,6 +19,16 @@ class User(AbstractUser, TimeStampedModel):
     avatar = models.ImageField(upload_to="users/avatars/", null=True, blank=True,)
 
     is_verified = models.BooleanField(default=False,)
+
+    USERNAME_FIELD = "email"
+
+    REQUIRED_FIELDS = [
+        "first_name",
+        "last_name",
+        "phone_number",
+    ]
+
+    objects = UserManager()
 
     deleted_at = models.DateTimeField(null=True, blank=True,)
 

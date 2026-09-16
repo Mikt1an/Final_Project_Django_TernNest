@@ -1,3 +1,4 @@
+from datetime import time
 from decimal import Decimal
 
 from django.conf import settings
@@ -43,6 +44,9 @@ class Listing(TimeStampedModel):
     country = models.CharField(max_length=100,)
     city = models.CharField(max_length=100,)
     address = models.CharField(max_length=255,)
+
+    earliest_check_in_time = models.TimeField(default=time(15, 0),)
+    latest_check_out_time = models.TimeField(default=time(11, 0),)
 
     price_per_night = models.DecimalField(max_digits=10, decimal_places=2, validators=[
             MinValueValidator(Decimal(str(MIN_PRICE_PER_NIGHT))),
@@ -94,9 +98,16 @@ class Listing(TimeStampedModel):
                 ),
                 name="valid_bedrooms_for_listing_type",
             ),
-            models.CheckConstraint(condition=models.Q(price_per_night__gte=1), name="listing_price_per_night_gte_1",),
-            models.CheckConstraint(condition=models.Q(max_guests__gte=1), name="listing_max_guests_gte_1",),
-            models.CheckConstraint(condition=models.Q(bedrooms__gte=1), name="listing_bedrooms_gte_1",),
+            models.CheckConstraint(
+                condition=models.Q(
+                    price_per_night__gte=MIN_PRICE_PER_NIGHT),
+                name="listing_price_per_night_gte_1",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    max_guests__gte=MIN_GUESTS),
+                name="listing_max_guests_gte_1",
+            ),
             models.CheckConstraint(condition=models.Q(beds__gte=1), name="listing_beds_gte_1",),
             models.CheckConstraint(condition=models.Q(bathrooms__gte=1), name="listing_bathrooms_gte_1",),
         ]
@@ -144,4 +155,4 @@ class Favorite(TimeStampedModel):
         constraints = [models.UniqueConstraint(fields=("user", "listing"), name="unique_user_listing_favorite",),]
 
     def __str__(self):
-        return f"{self.user.username} - {self.listing.title}"
+        return f"{self.user.email} - {self.listing.title}"

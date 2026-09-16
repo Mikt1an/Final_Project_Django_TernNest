@@ -22,33 +22,33 @@ from .validators import (
 )
 
 
-# Create your models here.
 class Review(TimeStampedModel):
-    booking = models.OneToOneField(Booking, on_delete=models.PROTECT, related_name="reviews",)
+    booking = models.OneToOneField(Booking, on_delete=models.PROTECT, related_name="review",)
 
-    rating = models.PositiveSmallIntegerField(validators=[
+    rating = models.PositiveSmallIntegerField(null=True, blank=True,
+        validators=[
             MinValueValidator(1),
             MaxValueValidator(5),
         ],
     )
 
-    liked = models.TextField(max_length=MAX_REVIEW_CHARACTERS, blank=True, validators=[
+    liked = models.TextField(max_length=MAX_REVIEW_CHARACTERS, blank=True,
+        validators=[
             validate_review_words,
         ],
     )
 
-    disliked = models.TextField(max_length=MAX_REVIEW_CHARACTERS, blank=True, validators=[
+    disliked = models.TextField(max_length=MAX_REVIEW_CHARACTERS, blank=True,
+        validators=[
             validate_review_words,
         ],
     )
 
     class Meta:
         ordering = ("-created_at",)
-
         constraints = [
-            models.CheckConstraint(
-                condition=Q(rating__gte=1) & Q(rating__lte=5),
-                name="review_rating_between_1_and_5",
+            models.CheckConstraint(condition=(Q(rating__isnull=True)|(Q(rating__gte=1)& Q(rating__lte=5))),
+                name="review_rating_between_1_and_5_or_null",
             ),
         ]
 
@@ -60,7 +60,7 @@ class Review(TimeStampedModel):
 
         if not self.liked and not self.disliked:
             raise ValidationError(
-                "At least one reviews text field must be filled."
+                "At least one review text field must be filled."
             )
 
         if not self.booking_id:
@@ -70,38 +70,57 @@ class Review(TimeStampedModel):
             raise ValidationError(
                 {
                     "booking": (
-                        "A reviews can only be created "
+                        "A review can only be created "
                         "for a completed booking."
                     )
                 }
             )
 
-        if self.booking.check_out > timezone.localdate():
+        if self.booking.check_out > timezone.now():
             raise ValidationError(
                 {
                     "booking": (
-                        "A reviews can only be created "
+                        "A review can only be created "
                         "after the stay has ended."
                     )
                 }
             )
 
+        if self.booking.guest_id== self.booking.listing.owner_id:
+            raise ValidationError(
+                {
+                    "booking": (
+                        "A listing owner cannot review "
+                        "their own listing."
+                    )
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
     def __str__(self):
+        rating_text = (
+            f"{self.rating}/5"
+            if self.rating is not None
+            else "No rating"
+        )
+
         return (
             f"{self.booking.guest} - "
             f"{self.booking.listing} - "
-            f"{self.rating}/5"
+            f"{rating_text}"
         )
 
 
 class ReviewImage(TimeStampedModel):
     review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name="images",)
 
-    image = models.ImageField(upload_to="users/reviews/",
+    image = models.ImageField(
+        upload_to="users/reviews/",
         validators=[
-            FileExtensionValidator(
-                allowed_extensions=ALLOWED_REVIEW_IMAGE_EXTENSIONS,
-            ),
+            FileExtensionValidator(allowed_extensions=ALLOWED_REVIEW_IMAGE_EXTENSIONS,),
             validate_review_image_size,
         ],
     )
@@ -118,11 +137,15 @@ class ReviewImage(TimeStampedModel):
             raise ValidationError(
                 {
                     "image": (
-                        f"A reviews can contain no more than "
+                        f"A review can contain no more than "
                         f"{MAX_REVIEW_IMAGES} images."
                     )
                 }
             )
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"Image for reviews #{self.review_id}"
+        return f"Image for review #{self.review_id}"
