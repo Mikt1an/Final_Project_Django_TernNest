@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from apps.accounts.serializers import UserPublicSerializer
 from apps.bookings.models import Booking, BlockedPeriod
+from apps.listings.models import Listing
 from apps.listings.serializers import ListingReadSerializer
 
 
@@ -29,13 +30,14 @@ class BookingReadSerializer(serializers.ModelSerializer):
 
 
 class BookingCreateSerializer(serializers.ModelSerializer):
-    guest = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    listing = serializers.PrimaryKeyRelatedField(
+        queryset=Listing.objects.all(),
+    )
 
     class Meta:
         model = Booking
         fields = (
             "id",
-            "guest",
             "listing",
             "check_in",
             "check_out",
@@ -54,84 +56,123 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-        guest = attrs["guest"]
         listing = attrs["listing"]
         check_in = attrs["check_in"]
         check_out = attrs["check_out"]
         guests = attrs["guests"]
 
-        errors = {}
+        if check_in <= timezone.now():
+            raise serializers.ValidationError(
+                {
+                    "check_in": (
+                        "Check-in must be in the future."
+                    )
+                }
+            )
 
-        if check_in < timezone.now():
-            errors["check_in"] = "Check-in cannot be in the past."
+        if check_out <= check_in:
+            raise serializers.ValidationError(
+                {
+                    "check_out": (
+                        "Check-out must be later than check-in."
+                    )
+                }
+            )
 
         book_days = (check_out.date() - check_in.date()).days
 
-        if check_out <= check_in:
-            errors["check_out"] = "Check-out must be later than check-in."
-        elif book_days < 1:
-            errors["check_out"] = "A booking must include at least one night."
+        if book_days < 1:
+            raise serializers.ValidationError(
+                {
+                    "check_out": (
+                        "A booking must contain at least one night."
+                    )
+                }
+            )
 
-        if guest.pk == listing.owner_id:
-            errors["listing"] = "You cannot book your own listing."
-        elif not listing.is_active:
-            errors["listing"] = "This listing is currently unavailable."
+        if not listing.is_active:
+            raise serializers.ValidationError(
+                {
+                    "listing": (
+                        "This listing is not available for booking."
+                    )
+                }
+            )
 
         if guests > listing.max_guests:
-            errors["guests"] = (
-                f"This listing allows a maximum of "
-                f"{listing.max_guests} guests."
+            raise serializers.ValidationError(
+                {
+                    "guests": (
+                        f"This listing allows no more than "
+                        f"{listing.max_guests} guests."
+                    )
+                }
             )
 
-        if check_in.time()< listing.earliest_check_in_time:
-            errors["check_in"] = (
-                f"Check-in cannot be earlier than "
-                f"{listing.earliest_check_in_time.strftime('%H:%M')}."
+        check_in_time = check_in.time()
+        check_out_time = check_out.time()
+
+        if check_in_time< listing.earliest_check_in_time:
+            earliest_check_in = listing.earliest_check_in_time.strftime("%H:%M")
+
+            raise serializers.ValidationError(
+                {
+                    "check_in": (
+                        f"Check-in is available from "
+                        f"{earliest_check_in}."
+                    )
+                }
             )
 
-        if check_out.time()> listing.latest_check_out_time:
-            errors["check_out"] = (
-                f"Check-out cannot be later than "
-                f"{listing.latest_check_out_time.strftime('%H:%M')}."
+        if check_out_time> listing.latest_check_out_time:
+            latest_check_out = listing.latest_check_out_time.strftime("%H:%M")
+
+            raise serializers.ValidationError(
+                {
+                    "check_out": (
+                        f"Check-out must be no later than "
+                        f"{latest_check_out}."
+                    )
+                }
             )
 
-        if errors:
-            raise serializers.ValidationError(errors)
-
-        overlapping_booking_exists = (
-            Booking.objects
-            .filter(
+        booking_conflict_exists = (
+            Booking.objects.filter(
                 listing=listing,
                 check_in__lt=check_out,
                 check_out__gt=check_in,
             )
-            .exclude(status=Booking.Status.CANCELLED)
+            .exclude(
+                status=Booking.Status.CANCELLED,
+            )
             .exists()
         )
 
-        if overlapping_booking_exists:
+        if booking_conflict_exists:
             raise serializers.ValidationError(
                 {
-                    "non_field_errors": [
-                        "The listing is already booked "
-                        "during the selected time."
-                    ]
+                    "non_field_errors": (
+                        "This listing is already booked "
+                        "for the selected period."
+                    )
                 }
             )
 
-        blocked_period_exists = BlockedPeriod.objects.filter(
-            listing=listing,
-            start_at__lt=check_out,
-            end_at__gt=check_in,
-        ).exists()
+        blocked_period_exists = (
+            BlockedPeriod.objects.filter(
+                listing=listing,
+                start_at__lt=check_out,
+                end_at__gt=check_in,
+            ).exists()
+        )
 
         if blocked_period_exists:
             raise serializers.ValidationError(
                 {
-                    "non_field_errors": [
-                        "The listing is unavailable "
-                        "during the selected time."
-                    ]
+                    "non_field_errors": (
+                        "This listing is unavailable "
+                        "for the selected period."
+                    )
                 }
             )
 
@@ -142,6 +183,8 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
 
 class BlockedPeriodSerializer(serializers.ModelSerializer):
+    listing = serializers.PrimaryKeyRelatedField(queryset=Listing.objects.all(),)
+
     class Meta:
         model = BlockedPeriod
         fields = (
@@ -159,69 +202,72 @@ class BlockedPeriodSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-        request = self.context.get("request")
+        current_listing = (self.instance.listing if self.instance is not None else None)
+        current_start_at = (self.instance.start_at if self.instance is not None else None)
+        current_end_at = (self.instance.end_at if self.instance is not None else None)
 
-        listing = attrs.get("listing", getattr(self.instance, "listing", None),)
-        start_at = attrs.get("start_at", getattr(self.instance, "start_at", None),)
-        end_at = attrs.get("end_at", getattr(self.instance, "end_at", None),)
-
-        errors = {}
-
-        if request is None or not request.user.is_authenticated:
-            errors["detail"] = "Authentication is required."
-        elif listing.owner_id != request.user.id:
-            errors["listing"] = "Only the listing owner can block time."
+        listing = attrs.get("listing", current_listing,)
+        start_at = attrs.get("start_at", current_start_at,)
+        end_at = attrs.get("end_at", current_end_at,)
 
         if start_at < timezone.now():
-            errors["start_at"] = (
-                "The blocked period cannot start in the past."
+            raise serializers.ValidationError(
+                {
+                    "start_at": (
+                        "The blocked period cannot start "
+                        "in the past."
+                    )
+                }
             )
 
         if end_at <= start_at:
-            errors["end_at"] = (
-                "End time must be later than start time."
+            raise serializers.ValidationError(
+                {
+                    "end_at": (
+                        "The end of the blocked period must "
+                        "be later than its start."
+                    )
+                }
             )
 
-        if errors:
-            raise serializers.ValidationError(errors)
-
-        blocked_periods = BlockedPeriod.objects.filter(
+        overlapping_periods = BlockedPeriod.objects.filter(
             listing=listing,
             start_at__lt=end_at,
             end_at__gt=start_at,
         )
 
         if self.instance is not None:
-            blocked_periods = blocked_periods.exclude(pk=self.instance.pk)
+            overlapping_periods = overlapping_periods.exclude(pk=self.instance.pk,)
 
-        if blocked_periods.exists():
+        if overlapping_periods.exists():
             raise serializers.ValidationError(
                 {
-                    "non_field_errors": [
-                        "This period overlaps another "
-                        "blocked period."
-                    ]
+                    "non_field_errors": (
+                        "This blocked period overlaps with "
+                        "another blocked period."
+                    )
                 }
             )
 
-        booking_exists = (
-            Booking.objects
-            .filter(
+        booking_conflict_exists = (
+            Booking.objects.filter(
                 listing=listing,
                 check_in__lt=end_at,
                 check_out__gt=start_at,
             )
-            .exclude(status=Booking.Status.CANCELLED)
+            .exclude(
+                status=Booking.Status.CANCELLED,
+            )
             .exists()
         )
 
-        if booking_exists:
+        if booking_conflict_exists:
             raise serializers.ValidationError(
                 {
-                    "non_field_errors": [
-                        "This period contains an "
-                        "existing booking."
-                    ]
+                    "non_field_errors": (
+                        "The listing already has a booking "
+                        "during this period."
+                    )
                 }
             )
 

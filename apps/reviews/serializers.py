@@ -8,8 +8,6 @@ from apps.reviews.models import Review, ReviewImage
 
 
 class ReviewImageSerializer(serializers.ModelSerializer):
-    review = serializers.PrimaryKeyRelatedField(queryset=Review.objects.all(), write_only=True,)
-
     class Meta:
         model = ReviewImage
         fields = (
@@ -24,22 +22,20 @@ class ReviewImageSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-        request = self.context.get("request")
+        review = attrs.get("review")
 
-        review = attrs.get("review", getattr(self.instance, "review", None),)
+        if review is None and self.instance is not None:
+            review = self.instance.review
 
-        if request is None or not request.user.is_authenticated:
-            raise serializers.ValidationError({"detail": "Authentication is required."})
+        if review is None:
+            return attrs
 
-        if review.booking.guest_id != request.user.id:
-            raise serializers.ValidationError({"review": (
-                        "You can only add images "
-                        "to your own review."
-                    )
-                }
-            )
+        images = review.images.all()
 
-        if self.instance is None and review.images.count() >= MAX_REVIEW_IMAGES:
+        if self.instance is not None:
+            images = images.exclude(pk=self.instance.pk)
+
+        if images.count() >= MAX_REVIEW_IMAGES:
             raise serializers.ValidationError(
                 {
                     "image": (
@@ -53,9 +49,18 @@ class ReviewImageSerializer(serializers.ModelSerializer):
 
 
 class ReviewReadSerializer(serializers.ModelSerializer):
-    guest = UserPublicSerializer(source="booking.guest", read_only=True,)
-    listing_id = serializers.IntegerField(source="booking.listing_id", read_only=True,)
-    images = ReviewImageSerializer(many=True, read_only=True,)
+    guest = UserPublicSerializer(
+        source="booking.guest",
+        read_only=True,
+    )
+    listing_id = serializers.IntegerField(
+        source="booking.listing_id",
+        read_only=True,
+    )
+    images = ReviewImageSerializer(
+        many=True,
+        read_only=True,
+    )
 
     class Meta:
         model = Review
@@ -75,7 +80,13 @@ class ReviewReadSerializer(serializers.ModelSerializer):
 
 
 class ReviewCreateSerializer(serializers.ModelSerializer):
-    booking = serializers.PrimaryKeyRelatedField(queryset=Booking.objects.all(),)
+    booking = serializers.PrimaryKeyRelatedField(
+        queryset=Booking.objects.select_related(
+            "guest",
+            "listing",
+            "listing__owner",
+        ),
+    )
 
     class Meta:
         model = Review
@@ -91,58 +102,62 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
             "id",
             "created_at",
         )
-        extra_kwargs = {
-            "rating": {
-                "required": False,
-                "allow_null": True,
-            },
-        }
 
     def validate(self, attrs):
-        request = self.context.get("request")
         booking = attrs["booking"]
 
         liked = (attrs.get("liked") or "").strip()
         disliked = (attrs.get("disliked") or "").strip()
 
-        errors = {}
+        attrs["liked"] = liked
+        attrs["disliked"] = disliked
 
-        if request is None or not request.user.is_authenticated:
-            errors["detail"] = "Authentication is required."
-        elif booking.guest_id != request.user.id:
-            errors["booking"] = "You can only review your own booking."
+        if not liked and not disliked:
+            raise serializers.ValidationError(
+                {
+                    "non_field_errors": (
+                        "At least one review text field must be filled."
+                    )
+                }
+            )
 
         if booking.status != Booking.Status.COMPLETED:
-            errors["booking"] = (
-                "A review can only be created "
-                "for a completed booking."
+            raise serializers.ValidationError(
+                {
+                    "booking": (
+                        "A review can only be created "
+                        "for a completed booking."
+                    )
+                }
             )
 
         if booking.check_out > timezone.now():
-            errors["booking"] = (
-                "A review can only be created "
-                "after the stay has ended."
+            raise serializers.ValidationError(
+                {
+                    "booking": (
+                        "A review can only be created "
+                        "after the stay has ended."
+                    )
+                }
             )
 
         if booking.guest_id == booking.listing.owner_id:
-            errors["booking"] = (
-                "A listing owner cannot review "
-                "their own listing."
+            raise serializers.ValidationError(
+                {
+                    "booking": (
+                        "A listing owner cannot review "
+                        "their own listing."
+                    )
+                }
             )
 
         if Review.objects.filter(booking=booking).exists():
-            errors["booking"] = "A review already exists for this booking."
-
-        if not liked and not disliked:
-            errors["non_field_errors"] = [
-                "At least one review text field "
-                "must be filled."
-            ]
-
-        if errors:
-            raise serializers.ValidationError(errors)
-
-        attrs["liked"] = liked
-        attrs["disliked"] = disliked
+            raise serializers.ValidationError(
+                {
+                    "booking": (
+                        "A review already exists for this booking."
+                    )
+                }
+            )
 
         return attrs
