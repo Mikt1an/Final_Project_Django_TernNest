@@ -183,7 +183,9 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
 
 class BlockedPeriodSerializer(serializers.ModelSerializer):
-    listing = serializers.PrimaryKeyRelatedField(queryset=Listing.objects.all(),)
+    listing = serializers.PrimaryKeyRelatedField(
+        queryset=Listing.objects.all(),
+    )
 
     class Meta:
         model = BlockedPeriod
@@ -192,6 +194,8 @@ class BlockedPeriodSerializer(serializers.ModelSerializer):
             "listing",
             "start_at",
             "end_at",
+            "reason",
+            "note",
             "created_at",
             "updated_at",
         )
@@ -202,13 +206,34 @@ class BlockedPeriodSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-        current_listing = (self.instance.listing if self.instance is not None else None)
-        current_start_at = (self.instance.start_at if self.instance is not None else None)
-        current_end_at = (self.instance.end_at if self.instance is not None else None)
+        current_listing = (
+            self.instance.listing
+            if self.instance is not None
+            else None
+        )
+        current_start_at = (
+            self.instance.start_at
+            if self.instance is not None
+            else None
+        )
+        current_end_at = (
+            self.instance.end_at
+            if self.instance is not None
+            else None
+        )
 
-        listing = attrs.get("listing", current_listing,)
-        start_at = attrs.get("start_at", current_start_at,)
-        end_at = attrs.get("end_at", current_end_at,)
+        listing = attrs.get(
+            "listing",
+            current_listing,
+        )
+        start_at = attrs.get(
+            "start_at",
+            current_start_at,
+        )
+        end_at = attrs.get(
+            "end_at",
+            current_end_at,
+        )
 
         if start_at < timezone.now():
             raise serializers.ValidationError(
@@ -237,7 +262,9 @@ class BlockedPeriodSerializer(serializers.ModelSerializer):
         )
 
         if self.instance is not None:
-            overlapping_periods = overlapping_periods.exclude(pk=self.instance.pk,)
+            overlapping_periods = overlapping_periods.exclude(
+                pk=self.instance.pk,
+            )
 
         if overlapping_periods.exists():
             raise serializers.ValidationError(
@@ -265,8 +292,9 @@ class BlockedPeriodSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {
                     "non_field_errors": (
-                        "The listing already has a booking "
-                        "during this period."
+                        "Existing bookings must be cancelled "
+                        "or rescheduled before blocking "
+                        "this period."
                     )
                 }
             )

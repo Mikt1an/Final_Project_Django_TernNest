@@ -51,26 +51,35 @@ class Booking(TimeStampedModel):
 
 
 class BlockedPeriod(TimeStampedModel):
-    listing = models.ForeignKey(
-        Listing,
-        on_delete=models.PROTECT,
-        related_name="blocked_periods",
-    )
+    class Reason(models.TextChoices):
+        MAINTENANCE = "maintenance", "Maintenance"
+        RENOVATION = "renovation", "Renovation"
+        OWNER_STAY = "owner_stay", "Owner stay"
+        VACATION = "vacation", "Vacation"
+        OTHER = "other", "Other"
+
+    listing = models.ForeignKey(Listing, on_delete=models.PROTECT, related_name="blocked_periods",)
+
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
+
+    reason = models.CharField(max_length=20, choices=Reason.choices, default=Reason.OTHER,)
+
+    note = models.CharField(max_length=255, blank=True, default="",)
 
     class Meta:
         ordering = ("start_at",)
         verbose_name = "Blocked period"
         verbose_name_plural = "Blocked periods"
-        constraints = (
+
+        constraints = [
             models.CheckConstraint(
                 condition=models.Q(
-                    end_at__gt=models.F("start_at")
+                    end_at__gt=models.F("start_at"),
                 ),
                 name="blocked_period_end_after_start",
             ),
-        )
+        ]
 
     def __str__(self):
         return (

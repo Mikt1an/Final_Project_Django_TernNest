@@ -156,13 +156,10 @@ class ListingWriteSerializer(serializers.ModelSerializer):
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-
     class Meta:
         model = Favorite
         fields = (
             "id",
-            "user",
             "listing",
             "created_at",
         )

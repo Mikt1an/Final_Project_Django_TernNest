@@ -86,16 +86,6 @@ class Review(TimeStampedModel):
                 }
             )
 
-        if self.booking.guest_id== self.booking.listing.owner_id:
-            raise ValidationError(
-                {
-                    "booking": (
-                        "A listing owner cannot review "
-                        "their own listing."
-                    )
-                }
-            )
-
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)

@@ -1,3 +1,224 @@
-from django.shortcuts import render
+from django.db.models import Q
+from django.db.models.deletion import ProtectedError
+from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import (
+    DestroyAPIView,
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
+from rest_framework.permissions import SAFE_METHODS
+from rest_framework.response import Response
 
-# Create your views here.
+from apps.listings.models import (
+    Amenity,
+    Favorite,
+    Listing,
+    ListingImage,
+)
+from apps.listings.permissions import (
+    IsAdminOrReadOnly,
+    IsFavoriteOwner,
+    IsListingImageOwnerOrReadOnly,
+    IsListingOwnerOrReadOnly,
+)
+from apps.listings.serializers import (
+    AmenitySerializer,
+    FavoriteSerializer,
+    ListingImageSerializer,
+    ListingReadSerializer,
+    ListingWriteSerializer,
+)
+
+
+def get_visible_listings(user):
+    queryset = Listing.objects.select_related(
+        "owner",
+    ).prefetch_related(
+        "amenities",
+        "images",
+    )
+
+    if user.is_authenticated:
+        return queryset.filter(
+            Q(is_active=True) | Q(owner=user)
+        ).distinct()
+
+    return queryset.filter(is_active=True)
+
+
+class AmenityListCreateView(ListCreateAPIView):
+    queryset = Amenity.objects.all()
+    serializer_class = AmenitySerializer
+    permission_classes = (IsAdminOrReadOnly,)
+
+
+class AmenityDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = Amenity.objects.all()
+    serializer_class = AmenitySerializer
+    permission_classes = (IsAdminOrReadOnly,)
+
+
+class ListingListCreateView(ListCreateAPIView):
+    permission_classes = (IsListingOwnerOrReadOnly,)
+
+    def get_queryset(self):
+        return get_visible_listings(self.request.user)
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ListingReadSerializer
+
+        return ListingWriteSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+
+class ListingDetailView(RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsListingOwnerOrReadOnly,)
+
+    def get_queryset(self):
+        return get_visible_listings(self.request.user)
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ListingReadSerializer
+
+        return ListingWriteSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(
+                request,
+                *args,
+                **kwargs,
+            )
+        except ProtectedError:
+            return Response(
+                {
+                    "detail": (
+                        "This listing cannot be deleted because "
+                        "it is referenced by other records. "
+                        "Deactivate it instead."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+
+class ListingImageListCreateView(ListCreateAPIView):
+    serializer_class = ListingImageSerializer
+    permission_classes = (IsListingOwnerOrReadOnly,)
+
+    def get_listing(self):
+        queryset = Listing.objects.select_related("owner")
+
+        if self.request.method in SAFE_METHODS:
+            if self.request.user.is_authenticated:
+                queryset = queryset.filter(
+                    Q(is_active=True)
+                    | Q(owner=self.request.user)
+                )
+            else:
+                queryset = queryset.filter(
+                    is_active=True,
+                )
+
+        listing = get_object_or_404(
+            queryset,
+            pk=self.kwargs["listing_pk"],
+        )
+
+        self.check_object_permissions(
+            self.request,
+            listing,
+        )
+
+        return listing
+
+    def get_queryset(self):
+        return ListingImage.objects.filter(
+            listing=self.get_listing(),
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(
+            listing=self.get_listing(),
+        )
+
+
+class ListingImageDetailView(
+    RetrieveUpdateDestroyAPIView,
+):
+    serializer_class = ListingImageSerializer
+    permission_classes = (
+        IsListingImageOwnerOrReadOnly,
+    )
+
+    def get_queryset(self):
+        queryset = ListingImage.objects.select_related(
+            "listing",
+            "listing__owner",
+        ).filter(
+            listing_id=self.kwargs["listing_pk"],
+        )
+
+        if self.request.method in SAFE_METHODS:
+            if self.request.user.is_authenticated:
+                queryset = queryset.filter(
+                    Q(listing__is_active=True)
+                    | Q(listing__owner=self.request.user)
+                )
+            else:
+                queryset = queryset.filter(
+                    listing__is_active=True,
+                )
+
+        return queryset
+
+
+class FavoriteListCreateView(ListCreateAPIView):
+    serializer_class = FavoriteSerializer
+    permission_classes = (IsFavoriteOwner,)
+
+    def get_queryset(self):
+        return Favorite.objects.filter(
+            user=self.request.user,
+        ).select_related(
+            "listing",
+            "listing__owner",
+        )
+
+    def perform_create(self, serializer):
+        listing = serializer.validated_data["listing"]
+
+        if Favorite.objects.filter(
+            user=self.request.user,
+            listing=listing,
+        ).exists():
+            raise ValidationError(
+                {
+                    "listing": (
+                        "This listing is already "
+                        "in your favorites."
+                    )
+                }
+            )
+
+        serializer.save(
+            user=self.request.user,
+        )
+
+
+class FavoriteDetailView(DestroyAPIView):
+    serializer_class = FavoriteSerializer
+    permission_classes = (IsFavoriteOwner,)
+
+    def get_queryset(self):
+        return Favorite.objects.filter(
+            user=self.request.user,
+        ).select_related(
+            "listing",
+        )
