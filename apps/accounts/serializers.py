@@ -56,7 +56,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         Email is also the login name in TernNest.
         """
 
-        value = value.strip()
+        value = value.strip().lower()
 
         user = self.instance
 
@@ -117,6 +117,18 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         read_only_fields = (
             "id",
         )
+
+    def validate_email(self, value):
+        value = value.strip().lower()
+
+        if User.objects.filter(
+                email__iexact=value
+        ).exists():
+            raise serializers.ValidationError(
+                "A user with this email already exists."
+            )
+
+        return value
 
     def validate(self, attrs):
         password = attrs.get("password")

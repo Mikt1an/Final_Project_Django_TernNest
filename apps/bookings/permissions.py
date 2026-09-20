@@ -87,7 +87,7 @@ class IsBlockedPeriodListingOwner(BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        if request.method == "POST":
+        if request.method in ("POST", "PUT", "PATCH"):
             listing = _get_requested_listing(request)
 
             if listing is None:

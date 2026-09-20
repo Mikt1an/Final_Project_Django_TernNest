@@ -1,3 +1,5 @@
+from datetime import date, datetime, timedelta
+
 from django.core.exceptions import (
     ValidationError as DjangoValidationError,
 )
@@ -17,6 +19,7 @@ from apps.listings.validators import (
     validate_max_images,
     validate_min_images,
 )
+from apps.listings.constants import MIN_CLEANING_GAP_HOURS
 
 
 class AmenitySerializer(serializers.ModelSerializer):
@@ -342,18 +345,35 @@ class ListingWriteSerializer(serializers.ModelSerializer):
         if (
             earliest_check_in_time is not None
             and latest_check_out_time is not None
-            and earliest_check_in_time
-            <= latest_check_out_time
         ):
-            raise serializers.ValidationError(
-                {
-                    "earliest_check_in_time": (
-                        "Check-in time must be later "
-                        "than check-out time to allow "
-                        "property turnover."
-                    )
-                }
+            check_in_datetime = datetime.combine(
+                date.min,
+                earliest_check_in_time,
             )
+            check_out_datetime = datetime.combine(
+                date.min,
+                latest_check_out_time,
+            )
+
+            cleaning_gap = (
+                    check_in_datetime
+                    - check_out_datetime
+            )
+
+            minimum_cleaning_gap = timedelta(
+                hours=MIN_CLEANING_GAP_HOURS
+            )
+
+            if cleaning_gap < minimum_cleaning_gap:
+                raise serializers.ValidationError(
+                    {
+                        "earliest_check_in_time": (
+                            "Check-in time must be at least "
+                            f"{MIN_CLEANING_GAP_HOURS} hours "
+                            "after check-out time."
+                        )
+                    }
+                )
 
         target_is_active = attrs.get(
             "is_active",

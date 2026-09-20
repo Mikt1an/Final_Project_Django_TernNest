@@ -47,8 +47,8 @@ class CurrentUserView(
         MultiPartParser,
     )
 
-    # Нам нужен GET и PATCH.
-    # Полный PUT профиля здесь не нужен.
+    # Only GET and PATCH are required for this endpoint.
+    # Full profile replacement through PUT is intentionally disabled.
     http_method_names = (
         "get",
         "patch",
