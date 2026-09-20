@@ -1,6 +1,9 @@
+from datetime import timedelta
+
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import (
     ListCreateAPIView,
@@ -24,6 +27,7 @@ from apps.bookings.serializers import (
     BookingCreateSerializer,
     BookingReadSerializer,
 )
+from apps.bookings.constants import BOOKING_CANCELLATION_DEADLINE_HOURS
 
 
 def get_booking_queryset():
@@ -106,9 +110,10 @@ class BookingCancelView(BookingActionView):
         IsBookingGuest | IsBookingListingOwner,
     )
 
-    def post(self, request, *args, **kwargs):
-        booking = self.get_booking()
-
+    def validate_guest_cancellation(
+        self,
+        booking,
+    ):
         if booking.status not in (
             Booking.Status.PENDING,
             Booking.Status.CONFIRMED,
@@ -116,10 +121,72 @@ class BookingCancelView(BookingActionView):
             raise ValidationError(
                 {
                     "status": (
-                        "Only pending or confirmed bookings "
-                        "can be cancelled."
+                        "Only pending or confirmed "
+                        "bookings can be cancelled "
+                        "by the guest."
                     )
                 }
+            )
+
+        cancellation_deadline = (
+            booking.check_in
+            - timedelta(
+                hours=(
+                    BOOKING_CANCELLATION_DEADLINE_HOURS
+                )
+            )
+        )
+
+        if timezone.now() > cancellation_deadline:
+            raise ValidationError(
+                {
+                    "status": (
+                        "A booking must be cancelled "
+                        f"at least "
+                        f"{BOOKING_CANCELLATION_DEADLINE_HOURS} "
+                        "hours before check-in."
+                    )
+                }
+            )
+
+    def validate_owner_cancellation(
+        self,
+        booking,
+    ):
+        if (
+            booking.status
+            != Booking.Status.CONFIRMED
+        ):
+            raise ValidationError(
+                {
+                    "status": (
+                        "The listing owner can only "
+                        "cancel confirmed bookings. "
+                        "Reject a pending booking instead."
+                    )
+                }
+            )
+
+        if booking.check_in <= timezone.now():
+            raise ValidationError(
+                {
+                    "status": (
+                        "The listing owner cannot cancel "
+                        "a booking after check-in."
+                    )
+                }
+            )
+
+    def post(self, request, *args, **kwargs):
+        booking = self.get_booking()
+
+        if booking.guest_id == request.user.id:
+            self.validate_guest_cancellation(
+                booking
+            )
+        else:
+            self.validate_owner_cancellation(
+                booking
             )
 
         booking.status = Booking.Status.CANCELLED
@@ -130,7 +197,41 @@ class BookingCancelView(BookingActionView):
             )
         )
 
-        return self.booking_response(booking)
+        return self.booking_response(
+            booking
+        )
+
+
+class BookingRejectView(BookingActionView):
+    permission_classes = (
+        IsAuthenticated,
+        IsBookingListingOwner,
+    )
+
+    def post(self, request, *args, **kwargs):
+        booking = self.get_booking()
+
+        if booking.status != Booking.Status.PENDING:
+            raise ValidationError(
+                {
+                    "status": (
+                        "Only pending bookings "
+                        "can be rejected."
+                    )
+                }
+            )
+
+        booking.status = Booking.Status.REJECTED
+        booking.save(
+            update_fields=(
+                "status",
+                "updated_at",
+            )
+        )
+
+        return self.booking_response(
+            booking
+        )
 
 
 class BookingConfirmView(BookingActionView):

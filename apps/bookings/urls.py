@@ -4,6 +4,7 @@ from apps.bookings.views import (
     BlockedPeriodDetailView,
     BlockedPeriodListCreateView,
     BookingCancelView,
+    BookingRejectView,
     BookingCompleteView,
     BookingConfirmView,
     BookingDetailView,
@@ -39,6 +40,11 @@ urlpatterns = [
         "<int:pk>/cancel/",
         BookingCancelView.as_view(),
         name="booking-cancel",
+    ),
+    path(
+        "<int:pk>/reject/",
+        BookingRejectView.as_view(),
+        name="booking-reject",
     ),
     path(
         "<int:pk>/confirm/",

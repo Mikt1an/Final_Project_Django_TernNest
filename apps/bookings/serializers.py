@@ -143,7 +143,10 @@ class BookingCreateSerializer(serializers.ModelSerializer):
                 check_out__gt=check_in,
             )
             .exclude(
-                status=Booking.Status.CANCELLED,
+                status__in=(
+                    Booking.Status.CANCELLED,
+                    Booking.Status.REJECTED,
+                ),
             )
             .exists()
         )
@@ -283,7 +286,10 @@ class BlockedPeriodSerializer(serializers.ModelSerializer):
                 check_out__gt=start_at,
             )
             .exclude(
-                status=Booking.Status.CANCELLED,
+                status__in=(
+                    Booking.Status.CANCELLED,
+                    Booking.Status.REJECTED,
+                ),
             )
             .exists()
         )

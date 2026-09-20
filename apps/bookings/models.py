@@ -11,6 +11,7 @@ class Booking(TimeStampedModel):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         CONFIRMED = "confirmed", "Confirmed"
+        REJECTED = "rejected", "Rejected"
         CANCELLED = "cancelled", "Cancelled"
         COMPLETED = "completed", "Completed"
 

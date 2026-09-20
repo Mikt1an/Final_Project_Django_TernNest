@@ -1,5 +1,5 @@
 import tempfile
-from datetime import time, timedelta
+from datetime import datetime, time, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -9,13 +9,14 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from apps.bookings.models import Booking
+from apps.bookings.models import Booking, BlockedPeriod
 from apps.listings.models import (
     Amenity,
     Favorite,
     Listing,
     ListingImage,
 )
+from apps.reviews.models import Review
 
 
 User = get_user_model()
@@ -1637,4 +1638,831 @@ class FavoriteAPITests(
         )
         self.assertIsNone(
             response.data["favorite_id"]
+        )
+
+
+class ListingFilteringAPITests(
+    ListingRelatedAPITestCase
+):
+    def setUp(self):
+        super().setUp()
+
+        self.list_url = reverse(
+            "listings:listing-list-create"
+        )
+
+    def create_filter_listing(
+        self,
+        *,
+        title,
+        description="Comfortable test accommodation.",
+        listing_type=Listing.ListingType.APARTMENT,
+        country="Germany",
+        city="Munich",
+        price="100.00",
+        max_guests=4,
+        bedrooms=2,
+        beds=2,
+        bathrooms=1,
+        amenities=None,
+    ):
+        listing = Listing.objects.create(
+            owner=self.owner,
+            title=title,
+            description=description,
+            listing_type=listing_type,
+            country=country,
+            city=city,
+            address=f"{title} address",
+            earliest_check_in_time=time(15, 0),
+            latest_check_out_time=time(11, 0),
+            price_per_night=Decimal(price),
+            max_guests=max_guests,
+            bedrooms=bedrooms,
+            beds=beds,
+            bathrooms=bathrooms,
+            is_active=True,
+        )
+
+        if amenities:
+            listing.amenities.set(
+                amenities
+            )
+
+        return listing
+
+    def listing_ids(self, response):
+        return [
+            item["id"]
+            for item in self.response_items(response)
+        ]
+
+    def create_booking_for_dates(
+        self,
+        *,
+        listing,
+        check_in_date,
+        check_out_date,
+        booking_status=Booking.Status.CONFIRMED,
+    ):
+        check_in = timezone.make_aware(
+            datetime.combine(
+                check_in_date,
+                time(15, 0),
+            )
+        )
+        check_out = timezone.make_aware(
+            datetime.combine(
+                check_out_date,
+                time(11, 0),
+            )
+        )
+
+        book_days = (
+            check_out_date
+            - check_in_date
+        ).days
+
+        return Booking.objects.create(
+            guest=self.other_user,
+            listing=listing,
+            check_in=check_in,
+            check_out=check_out,
+            book_days=book_days,
+            guests=2,
+            total_price=(
+                listing.price_per_night
+                * book_days
+            ),
+            status=booking_status,
+        )
+
+    def add_rating(
+        self,
+        *,
+        listing,
+        rating,
+    ):
+        check_out = (
+            timezone.now()
+            - timedelta(days=1)
+        )
+        check_in = (
+            check_out
+            - timedelta(days=2)
+        )
+
+        booking = Booking.objects.create(
+            guest=self.other_user,
+            listing=listing,
+            check_in=check_in,
+            check_out=check_out,
+            book_days=2,
+            guests=2,
+            total_price=(
+                listing.price_per_night
+                * 2
+            ),
+            status=Booking.Status.COMPLETED,
+        )
+
+        return Review.objects.create(
+            booking=booking,
+            rating=rating,
+            liked="A completed rated stay.",
+            disliked="",
+        )
+
+    def test_search_matches_title_and_description(
+        self,
+    ):
+        title_match = self.create_filter_listing(
+            title="Mountain Retreat",
+        )
+        description_match = (
+            self.create_filter_listing(
+                title="Quiet Apartment",
+                description=(
+                    "A peaceful home with "
+                    "a mountain view."
+                ),
+            )
+        )
+        unrelated = self.create_filter_listing(
+            title="City Studio",
+            description="Located near the central station.",
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {"search": "MOUNTAIN"},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        listing_ids = self.listing_ids(
+            response
+        )
+
+        self.assertIn(
+            title_match.pk,
+            listing_ids,
+        )
+        self.assertIn(
+            description_match.pk,
+            listing_ids,
+        )
+        self.assertNotIn(
+            unrelated.pk,
+            listing_ids,
+        )
+
+    def test_price_range_filters_listings(self):
+        cheap = self.create_filter_listing(
+            title="Cheap apartment",
+            price="50.00",
+        )
+        matching = self.create_filter_listing(
+            title="Matching apartment",
+            price="150.00",
+        )
+        expensive = self.create_filter_listing(
+            title="Expensive apartment",
+            price="250.00",
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "min_price": "100.00",
+                "max_price": "200.00",
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        listing_ids = self.listing_ids(
+            response
+        )
+
+        self.assertNotIn(
+            cheap.pk,
+            listing_ids,
+        )
+        self.assertIn(
+            matching.pk,
+            listing_ids,
+        )
+        self.assertNotIn(
+            expensive.pk,
+            listing_ids,
+        )
+
+    def test_listing_type_filter(self):
+        apartment = self.create_filter_listing(
+            title="Apartment",
+            listing_type=(
+                Listing.ListingType.APARTMENT
+            ),
+        )
+        house = self.create_filter_listing(
+            title="House",
+            listing_type=Listing.ListingType.HOUSE,
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "listing_type": (
+                    Listing.ListingType.HOUSE
+                )
+            },
+        )
+
+        listing_ids = self.listing_ids(
+            response
+        )
+
+        self.assertNotIn(
+            apartment.pk,
+            listing_ids,
+        )
+        self.assertIn(
+            house.pk,
+            listing_ids,
+        )
+
+    def test_city_and_country_filters_are_case_insensitive(
+        self,
+    ):
+        matching = self.create_filter_listing(
+            title="Munich apartment",
+            city="Munich",
+            country="Germany",
+        )
+        wrong_country = self.create_filter_listing(
+            title="Munich in another country",
+            city="Munich",
+            country="Austria",
+        )
+        wrong_city = self.create_filter_listing(
+            title="Berlin apartment",
+            city="Berlin",
+            country="Germany",
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "city": "MUN",
+                "country": "germ",
+            },
+        )
+
+        listing_ids = self.listing_ids(
+            response
+        )
+
+        self.assertIn(
+            matching.pk,
+            listing_ids,
+        )
+        self.assertNotIn(
+            wrong_country.pk,
+            listing_ids,
+        )
+        self.assertNotIn(
+            wrong_city.pk,
+            listing_ids,
+        )
+
+    def test_property_detail_filters_can_be_combined(
+        self,
+    ):
+        matching = self.create_filter_listing(
+            title="Matching property",
+            bedrooms=3,
+            beds=4,
+            bathrooms=2,
+        )
+        wrong_bedrooms = self.create_filter_listing(
+            title="Wrong bedrooms",
+            bedrooms=2,
+            beds=4,
+            bathrooms=2,
+        )
+        wrong_beds = self.create_filter_listing(
+            title="Wrong beds",
+            bedrooms=3,
+            beds=3,
+            bathrooms=2,
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "bedrooms": 3,
+                "beds": 4,
+                "bathrooms": 2,
+            },
+        )
+
+        listing_ids = self.listing_ids(
+            response
+        )
+
+        self.assertIn(
+            matching.pk,
+            listing_ids,
+        )
+        self.assertNotIn(
+            wrong_bedrooms.pk,
+            listing_ids,
+        )
+        self.assertNotIn(
+            wrong_beds.pk,
+            listing_ids,
+        )
+
+    def test_guests_filter_uses_minimum_capacity(self):
+        too_small = self.create_filter_listing(
+            title="Small apartment",
+            max_guests=2,
+        )
+        exact_capacity = self.create_filter_listing(
+            title="Exact apartment",
+            max_guests=4,
+        )
+        larger = self.create_filter_listing(
+            title="Large apartment",
+            max_guests=6,
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {"guests": 4},
+        )
+
+        listing_ids = self.listing_ids(
+            response
+        )
+
+        self.assertNotIn(
+            too_small.pk,
+            listing_ids,
+        )
+        self.assertIn(
+            exact_capacity.pk,
+            listing_ids,
+        )
+        self.assertIn(
+            larger.pk,
+            listing_ids,
+        )
+
+    def test_amenity_filter_requires_all_selected_amenities(
+        self,
+    ):
+        wifi = Amenity.objects.create(
+            name="Filter Wi-Fi"
+        )
+        pool = Amenity.objects.create(
+            name="Filter pool"
+        )
+
+        both_amenities = self.create_filter_listing(
+            title="Apartment with both",
+            amenities=[wifi, pool],
+        )
+        wifi_only = self.create_filter_listing(
+            title="Apartment with Wi-Fi",
+            amenities=[wifi],
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "amenities": (
+                    f"{wifi.pk},{pool.pk}"
+                )
+            },
+        )
+
+        listing_ids = self.listing_ids(
+            response
+        )
+
+        self.assertIn(
+            both_amenities.pk,
+            listing_ids,
+        )
+        self.assertNotIn(
+            wifi_only.pk,
+            listing_ids,
+        )
+
+    def test_invalid_amenity_ids_are_rejected(self):
+        response = self.client.get(
+            self.list_url,
+            {"amenities": "1,invalid"},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn(
+            "amenities",
+            response.data,
+        )
+
+    def test_invalid_price_range_is_rejected(self):
+        response = self.client.get(
+            self.list_url,
+            {
+                "min_price": "500.00",
+                "max_price": "100.00",
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn(
+            "max_price",
+            response.data,
+        )
+
+    def test_price_can_be_sorted_ascending(self):
+        expensive = self.create_filter_listing(
+            title="Expensive",
+            price="300.00",
+        )
+        cheap = self.create_filter_listing(
+            title="Cheap",
+            price="100.00",
+        )
+        medium = self.create_filter_listing(
+            title="Medium",
+            price="200.00",
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {"ordering": "price_per_night"},
+        )
+
+        self.assertEqual(
+            self.listing_ids(response),
+            [
+                cheap.pk,
+                medium.pk,
+                expensive.pk,
+            ],
+        )
+
+    def test_price_can_be_sorted_descending(self):
+        expensive = self.create_filter_listing(
+            title="Expensive",
+            price="300.00",
+        )
+        cheap = self.create_filter_listing(
+            title="Cheap",
+            price="100.00",
+        )
+        medium = self.create_filter_listing(
+            title="Medium",
+            price="200.00",
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {"ordering": "-price_per_night"},
+        )
+
+        self.assertEqual(
+            self.listing_ids(response),
+            [
+                expensive.pk,
+                medium.pk,
+                cheap.pk,
+            ],
+        )
+
+    def test_rating_can_be_sorted_descending(self):
+        low_rated = self.create_filter_listing(
+            title="Low rated",
+        )
+        high_rated = self.create_filter_listing(
+            title="High rated",
+        )
+        unrated = self.create_filter_listing(
+            title="Unrated",
+        )
+
+        self.add_rating(
+            listing=low_rated,
+            rating=2,
+        )
+        self.add_rating(
+            listing=high_rated,
+            rating=5,
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {"ordering": "-rating"},
+        )
+
+        self.assertEqual(
+            self.listing_ids(response),
+            [
+                high_rated.pk,
+                low_rated.pk,
+                unrated.pk,
+            ],
+        )
+
+    def test_newest_listings_can_be_sorted_first(self):
+        older = self.create_filter_listing(
+            title="Older listing",
+        )
+        newer = self.create_filter_listing(
+            title="Newer listing",
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {"ordering": "-created_at"},
+        )
+
+        self.assertEqual(
+            self.listing_ids(response),
+            [
+                newer.pk,
+                older.pk,
+            ],
+        )
+
+    def test_booking_conflict_excludes_listing(self):
+        unavailable = self.create_filter_listing(
+            title="Unavailable listing",
+        )
+        available = self.create_filter_listing(
+            title="Available listing",
+        )
+
+        search_check_in = (
+            timezone.localdate()
+            + timedelta(days=10)
+        )
+        search_check_out = (
+            search_check_in
+            + timedelta(days=5)
+        )
+
+        self.create_booking_for_dates(
+            listing=unavailable,
+            check_in_date=(
+                search_check_in
+                + timedelta(days=1)
+            ),
+            check_out_date=(
+                search_check_in
+                + timedelta(days=3)
+            ),
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "check_in": (
+                    search_check_in.isoformat()
+                ),
+                "check_out": (
+                    search_check_out.isoformat()
+                ),
+            },
+        )
+
+        listing_ids = self.listing_ids(
+            response
+        )
+
+        self.assertNotIn(
+            unavailable.pk,
+            listing_ids,
+        )
+        self.assertIn(
+            available.pk,
+            listing_ids,
+        )
+
+    def test_cancelled_booking_does_not_exclude_listing(
+        self,
+    ):
+        listing = self.create_filter_listing(
+            title="Listing with cancelled booking",
+        )
+
+        search_check_in = (
+            timezone.localdate()
+            + timedelta(days=10)
+        )
+        search_check_out = (
+            search_check_in
+            + timedelta(days=5)
+        )
+
+        self.create_booking_for_dates(
+            listing=listing,
+            check_in_date=(
+                search_check_in
+                + timedelta(days=1)
+            ),
+            check_out_date=(
+                search_check_in
+                + timedelta(days=3)
+            ),
+            booking_status=(
+                Booking.Status.CANCELLED
+            ),
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "check_in": (
+                    search_check_in.isoformat()
+                ),
+                "check_out": (
+                    search_check_out.isoformat()
+                ),
+            },
+        )
+
+        self.assertIn(
+            listing.pk,
+            self.listing_ids(response),
+        )
+
+    def test_blocked_period_excludes_listing(self):
+        blocked_listing = self.create_filter_listing(
+            title="Blocked listing",
+        )
+        available_listing = self.create_filter_listing(
+            title="Available listing",
+        )
+
+        search_check_in = (
+            timezone.localdate()
+            + timedelta(days=10)
+        )
+        search_check_out = (
+            search_check_in
+            + timedelta(days=5)
+        )
+
+        blocked_start = timezone.make_aware(
+            datetime.combine(
+                search_check_in
+                + timedelta(days=1),
+                time(9, 0),
+            )
+        )
+        blocked_end = timezone.make_aware(
+            datetime.combine(
+                search_check_in
+                + timedelta(days=2),
+                time(18, 0),
+            )
+        )
+
+        BlockedPeriod.objects.create(
+            listing=blocked_listing,
+            start_at=blocked_start,
+            end_at=blocked_end,
+            reason=(
+                BlockedPeriod.Reason.MAINTENANCE
+            ),
+            note="Scheduled maintenance.",
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "check_in": (
+                    search_check_in.isoformat()
+                ),
+                "check_out": (
+                    search_check_out.isoformat()
+                ),
+            },
+        )
+
+        listing_ids = self.listing_ids(
+            response
+        )
+
+        self.assertNotIn(
+            blocked_listing.pk,
+            listing_ids,
+        )
+        self.assertIn(
+            available_listing.pk,
+            listing_ids,
+        )
+
+    def test_invalid_date_range_is_rejected(self):
+        check_in = (
+            timezone.localdate()
+            + timedelta(days=10)
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "check_in": check_in.isoformat(),
+                "check_out": check_in.isoformat(),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn(
+            "check_out",
+            response.data,
+        )
+
+    def test_both_availability_dates_are_required(self):
+        check_in = (
+            timezone.localdate()
+            + timedelta(days=10)
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "check_in": check_in.isoformat(),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn(
+            "check_out",
+            response.data,
+        )
+
+    def test_rejected_booking_does_not_exclude_listing(
+            self,
+    ):
+        listing = self.create_filter_listing(
+            title="Listing with rejected booking",
+        )
+
+        search_check_in = (
+                timezone.localdate()
+                + timedelta(days=10)
+        )
+        search_check_out = (
+                search_check_in
+                + timedelta(days=5)
+        )
+
+        self.create_booking_for_dates(
+            listing=listing,
+            check_in_date=(
+                    search_check_in
+                    + timedelta(days=1)
+            ),
+            check_out_date=(
+                    search_check_in
+                    + timedelta(days=3)
+            ),
+            booking_status=Booking.Status.REJECTED,
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "check_in": search_check_in.isoformat(),
+                "check_out": search_check_out.isoformat(),
+            },
+        )
+
+        self.assertIn(
+            listing.pk,
+            self.listing_ids(response),
         )

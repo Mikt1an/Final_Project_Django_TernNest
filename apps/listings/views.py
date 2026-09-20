@@ -36,6 +36,7 @@ from apps.listings.serializers import (
     ListingReadSerializer,
     ListingWriteSerializer,
 )
+from apps.listings.filters import filter_listings
 
 
 def get_visible_listings(user):
@@ -100,8 +101,16 @@ class ListingListCreateView(
     )
 
     def get_queryset(self):
-        return get_visible_listings(
+        queryset = get_visible_listings(
             self.request.user
+        )
+
+        if self.request.method != "GET":
+            return queryset
+
+        return filter_listings(
+            queryset,
+            self.request.query_params,
         )
 
     def get_serializer_class(self):

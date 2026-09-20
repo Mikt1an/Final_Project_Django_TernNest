@@ -375,6 +375,26 @@ class BookingCreateAPITests(APITestCase):
             2,
         )
 
+    def test_rejected_booking_does_not_block_dates(self):
+        self.create_existing_booking(
+            status_value=Booking.Status.REJECTED,
+        )
+
+        response = self.client.post(
+            self.url,
+            self.booking_payload(),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+        self.assertEqual(
+            Booking.objects.count(),
+            2,
+        )
+
     def test_blocked_period_prevents_booking(self):
         BlockedPeriod.objects.create(
             listing=self.listing,
@@ -664,14 +684,14 @@ class BookingActionsAPITests(APITestCase):
             Booking.Status.CANCELLED,
         )
 
-    def test_owner_can_cancel_pending_booking(self):
+    def test_owner_can_reject_pending_booking(self):
         self.client.force_authenticate(
             user=self.owner
         )
 
         response = self.client.post(
             reverse(
-                "bookings:booking-cancel",
+                "bookings:booking-reject",
                 kwargs={"pk": self.booking.pk},
             ),
             {},
@@ -687,7 +707,7 @@ class BookingActionsAPITests(APITestCase):
 
         self.assertEqual(
             self.booking.status,
-            Booking.Status.CANCELLED,
+            Booking.Status.REJECTED,
         )
 
     def test_outsider_cannot_cancel_booking(self):
@@ -908,6 +928,212 @@ class BookingActionsAPITests(APITestCase):
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
         )
+
+        def test_guest_cannot_cancel_within_deadline(self):
+            self.booking.check_in = (
+                    timezone.now()
+                    + timedelta(hours=23)
+            )
+            self.booking.check_out = (
+                    self.booking.check_in
+                    + timedelta(days=2)
+            )
+            self.booking.save(
+                update_fields=(
+                    "check_in",
+                    "check_out",
+                )
+            )
+
+            self.client.force_authenticate(
+                user=self.guest
+            )
+
+            response = self.client.post(
+                reverse(
+                    "bookings:booking-cancel",
+                    kwargs={"pk": self.booking.pk},
+                ),
+                {},
+                format="json",
+            )
+
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_400_BAD_REQUEST,
+            )
+            self.assertIn(
+                "status",
+                response.data,
+            )
+
+            self.booking.refresh_from_db()
+
+            self.assertEqual(
+                self.booking.status,
+                Booking.Status.PENDING,
+            )
+
+        def test_owner_can_cancel_confirmed_booking(self):
+            self.booking.status = Booking.Status.CONFIRMED
+            self.booking.save(
+                update_fields=("status",)
+            )
+
+            self.client.force_authenticate(
+                user=self.owner
+            )
+
+            response = self.client.post(
+                reverse(
+                    "bookings:booking-cancel",
+                    kwargs={"pk": self.booking.pk},
+                ),
+                {},
+                format="json",
+            )
+
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_200_OK,
+            )
+
+            self.booking.refresh_from_db()
+
+            self.assertEqual(
+                self.booking.status,
+                Booking.Status.CANCELLED,
+            )
+
+        def test_owner_cannot_cancel_pending_booking(self):
+            self.client.force_authenticate(
+                user=self.owner
+            )
+
+            response = self.client.post(
+                reverse(
+                    "bookings:booking-cancel",
+                    kwargs={"pk": self.booking.pk},
+                ),
+                {},
+                format="json",
+            )
+
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_400_BAD_REQUEST,
+            )
+            self.assertIn(
+                "status",
+                response.data,
+            )
+
+            self.booking.refresh_from_db()
+
+            self.assertEqual(
+                self.booking.status,
+                Booking.Status.PENDING,
+            )
+
+        def test_owner_cannot_cancel_after_check_in(self):
+            self.booking.status = Booking.Status.CONFIRMED
+            self.booking.check_in = (
+                    timezone.now()
+                    - timedelta(hours=1)
+            )
+            self.booking.check_out = (
+                    timezone.now()
+                    + timedelta(days=2)
+            )
+            self.booking.save(
+                update_fields=(
+                    "status",
+                    "check_in",
+                    "check_out",
+                )
+            )
+
+            self.client.force_authenticate(
+                user=self.owner
+            )
+
+            response = self.client.post(
+                reverse(
+                    "bookings:booking-cancel",
+                    kwargs={"pk": self.booking.pk},
+                ),
+                {},
+                format="json",
+            )
+
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+            self.booking.refresh_from_db()
+
+            self.assertEqual(
+                self.booking.status,
+                Booking.Status.CONFIRMED,
+            )
+
+        def test_guest_cannot_reject_booking(self):
+            self.client.force_authenticate(
+                user=self.guest
+            )
+
+            response = self.client.post(
+                reverse(
+                    "bookings:booking-reject",
+                    kwargs={"pk": self.booking.pk},
+                ),
+                {},
+                format="json",
+            )
+
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_403_FORBIDDEN,
+            )
+
+            self.booking.refresh_from_db()
+
+            self.assertEqual(
+                self.booking.status,
+                Booking.Status.PENDING,
+            )
+
+        def test_only_pending_booking_can_be_rejected(self):
+            self.booking.status = Booking.Status.CONFIRMED
+            self.booking.save(
+                update_fields=("status",)
+            )
+
+            self.client.force_authenticate(
+                user=self.owner
+            )
+
+            response = self.client.post(
+                reverse(
+                    "bookings:booking-reject",
+                    kwargs={"pk": self.booking.pk},
+                ),
+                {},
+                format="json",
+            )
+
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+            self.booking.refresh_from_db()
+
+            self.assertEqual(
+                self.booking.status,
+                Booking.Status.CONFIRMED,
+            )
 
 
 class BlockedPeriodAPITests(APITestCase):
@@ -1237,6 +1463,31 @@ class BlockedPeriodAPITests(APITestCase):
     def test_cancelled_booking_does_not_prevent_period(self):
         self.create_booking(
             status_value=Booking.Status.CANCELLED
+        )
+
+        self.client.force_authenticate(
+            user=self.owner
+        )
+
+        response = self.client.post(
+            self.list_url,
+            self.period_payload(
+                start_at=self.make_datetime(11, 9),
+                end_at=self.make_datetime(12, 18),
+            ),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+    def test_rejected_booking_does_not_prevent_period(
+            self,
+    ):
+        self.create_booking(
+            status_value=Booking.Status.REJECTED
         )
 
         self.client.force_authenticate(
