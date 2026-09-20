@@ -2,26 +2,44 @@ from django.db import transaction
 from django.db.models import (
     Avg,
     Count,
+    Max,
     Q,
 )
-from django.db.models.deletion import ProtectedError
-from django.shortcuts import get_object_or_404
+from django.db.models.deletion import (
+    ProtectedError,
+)
+from django.shortcuts import (
+    get_object_or_404,
+)
 
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import (
+    ValidationError,
+)
 from rest_framework.generics import (
     DestroyAPIView,
+    ListAPIView,
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
 )
-from rest_framework.permissions import SAFE_METHODS
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    SAFE_METHODS,
+)
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from apps.listings.filters import (
+    filter_listings,
+)
 from apps.listings.models import (
     Amenity,
     Favorite,
     Listing,
     ListingImage,
+    ListingView,
+    SearchHistory,
 )
 from apps.listings.permissions import (
     IsAdminOrReadOnly,
@@ -34,9 +52,14 @@ from apps.listings.serializers import (
     FavoriteSerializer,
     ListingImageSerializer,
     ListingReadSerializer,
+    ListingViewHistorySerializer,
     ListingWriteSerializer,
+    PopularSearchSerializer,
 )
-from apps.listings.filters import filter_listings
+from apps.listings.services import (
+    record_listing_view,
+    record_search_query,
+)
 
 
 def get_visible_listings(user):
@@ -57,6 +80,10 @@ def get_visible_listings(user):
                 "bookings__review",
                 distinct=True,
             ),
+            views_count_value=Count(
+                "views",
+                distinct=True,
+            ),
         )
     )
 
@@ -75,9 +102,15 @@ def get_visible_listings(user):
     )
 
 
-class AmenityListCreateView(ListCreateAPIView):
+class AmenityListCreateView(
+    ListCreateAPIView,
+):
     queryset = Amenity.objects.all()
-    serializer_class = AmenitySerializer
+
+    serializer_class = (
+        AmenitySerializer
+    )
+
     permission_classes = (
         IsAdminOrReadOnly,
     )
@@ -87,7 +120,11 @@ class AmenityDetailView(
     RetrieveUpdateDestroyAPIView,
 ):
     queryset = Amenity.objects.all()
-    serializer_class = AmenitySerializer
+
+    serializer_class = (
+        AmenitySerializer
+    )
+
     permission_classes = (
         IsAdminOrReadOnly,
     )
@@ -119,7 +156,33 @@ class ListingListCreateView(
 
         return ListingWriteSerializer
 
-    def perform_create(self, serializer):
+    def list(
+        self,
+        request,
+        *args,
+        **kwargs,
+    ):
+        response = super().list(
+            request,
+            *args,
+            **kwargs,
+        )
+
+        record_search_query(
+            request=request,
+            query=(
+                request.query_params.get(
+                    "search"
+                )
+            ),
+        )
+
+        return response
+
+    def perform_create(
+        self,
+        serializer,
+    ):
         serializer.save(
             owner=self.request.user
         )
@@ -143,6 +206,39 @@ class ListingDetailView(
 
         return ListingWriteSerializer
 
+    def retrieve(
+        self,
+        request,
+        *args,
+        **kwargs,
+    ):
+        listing = self.get_object()
+
+        created = record_listing_view(
+            listing=listing,
+            request=request,
+        )
+
+        if created:
+            current_count = getattr(
+                listing,
+                "views_count_value",
+                None,
+            )
+
+            if current_count is not None:
+                listing.views_count_value = (
+                    current_count + 1
+                )
+
+        serializer = self.get_serializer(
+            listing
+        )
+
+        return Response(
+            serializer.data
+        )
+
     def destroy(
         self,
         request,
@@ -153,6 +249,7 @@ class ListingDetailView(
 
         try:
             with transaction.atomic():
+                listing.views.all().delete()
                 listing.images.all().delete()
                 listing.delete()
 
@@ -160,17 +257,23 @@ class ListingDetailView(
             return Response(
                 {
                     "detail": (
-                        "This listing cannot be permanently "
-                        "deleted because it has linked data "
-                        "such as bookings, favorites or blocked "
-                        "periods. Deactivate it instead."
+                        "This listing cannot be "
+                        "permanently deleted because "
+                        "it has linked data such as "
+                        "bookings, favorites or "
+                        "blocked periods. Deactivate "
+                        "it instead."
                     )
                 },
-                status=status.HTTP_409_CONFLICT,
+                status=(
+                    status.HTTP_409_CONFLICT
+                ),
             )
 
         return Response(
-            status=status.HTTP_204_NO_CONTENT
+            status=(
+                status.HTTP_204_NO_CONTENT
+            )
         )
 
 
@@ -180,29 +283,51 @@ class ListingImageListCreateView(
     serializer_class = (
         ListingImageSerializer
     )
+
     permission_classes = (
         IsListingOwnerOrReadOnly,
     )
 
     def get_listing(self):
-        queryset = Listing.objects.select_related(
-            "owner"
+        queryset = (
+            Listing.objects
+            .select_related(
+                "owner"
+            )
         )
 
-        if self.request.method in SAFE_METHODS:
-            if self.request.user.is_authenticated:
-                queryset = queryset.filter(
-                    Q(is_active=True)
-                    | Q(owner=self.request.user)
+        if (
+            self.request.method
+            in SAFE_METHODS
+        ):
+            if (
+                self.request
+                .user
+                .is_authenticated
+            ):
+                queryset = (
+                    queryset.filter(
+                        Q(is_active=True)
+                        | Q(
+                            owner=(
+                                self.request.user
+                            )
+                        )
+                    )
                 )
+
             else:
-                queryset = queryset.filter(
-                    is_active=True,
+                queryset = (
+                    queryset.filter(
+                        is_active=True,
+                    )
                 )
 
         listing = get_object_or_404(
             queryset,
-            pk=self.kwargs["listing_pk"],
+            pk=self.kwargs[
+                "listing_pk"
+            ],
         )
 
         self.check_object_permissions(
@@ -213,11 +338,19 @@ class ListingImageListCreateView(
         return listing
 
     def get_queryset(self):
-        return ListingImage.objects.filter(
-            listing=self.get_listing(),
+        return (
+            ListingImage.objects
+            .filter(
+                listing=(
+                    self.get_listing()
+                ),
+            )
         )
 
-    def perform_create(self, serializer):
+    def perform_create(
+        self,
+        serializer,
+    ):
         serializer.save(
             listing=self.get_listing(),
         )
@@ -229,6 +362,7 @@ class ListingImageDetailView(
     serializer_class = (
         ListingImageSerializer
     )
+
     permission_classes = (
         IsListingImageOwnerOrReadOnly,
     )
@@ -247,19 +381,33 @@ class ListingImageDetailView(
             )
         )
 
-        if self.request.method in SAFE_METHODS:
-            if self.request.user.is_authenticated:
-                queryset = queryset.filter(
-                    Q(listing__is_active=True)
-                    | Q(
-                        listing__owner=(
-                            self.request.user
+        if (
+            self.request.method
+            in SAFE_METHODS
+        ):
+            if (
+                self.request
+                .user
+                .is_authenticated
+            ):
+                queryset = (
+                    queryset.filter(
+                        Q(
+                            listing__is_active=True
+                        )
+                        | Q(
+                            listing__owner=(
+                                self.request.user
+                            )
                         )
                     )
                 )
+
             else:
-                queryset = queryset.filter(
-                    listing__is_active=True,
+                queryset = (
+                    queryset.filter(
+                        listing__is_active=True,
+                    )
                 )
 
         return queryset
@@ -271,6 +419,7 @@ class FavoriteListCreateView(
     serializer_class = (
         FavoriteSerializer
     )
+
     permission_classes = (
         IsFavoriteOwner,
     )
@@ -320,6 +469,7 @@ class FavoriteDetailView(
     serializer_class = (
         FavoriteSerializer
     )
+
     permission_classes = (
         IsFavoriteOwner,
     )
@@ -333,4 +483,78 @@ class FavoriteDetailView(
             .select_related(
                 "listing",
             )
+        )
+
+
+class ListingViewHistoryView(
+    ListAPIView,
+):
+    serializer_class = (
+        ListingViewHistorySerializer
+    )
+
+    permission_classes = (
+        IsAuthenticated,
+    )
+
+    def get_queryset(self):
+        return (
+            ListingView.objects
+            .filter(
+                user=self.request.user,
+                listing__is_active=True,
+            )
+            .select_related(
+                "listing",
+                "listing__owner",
+            )
+            .prefetch_related(
+                "listing__amenities",
+                "listing__images",
+            )
+        )
+
+
+class PopularSearchListView(
+    APIView,
+):
+    permission_classes = (
+        AllowAny,
+    )
+
+    def get(
+        self,
+        request,
+        *args,
+        **kwargs,
+    ):
+        popular_searches = (
+            SearchHistory.objects
+            .values(
+                "normalized_query"
+            )
+            .annotate(
+                search_count=Count(
+                    "id"
+                ),
+                last_searched_at=Max(
+                    "created_at"
+                ),
+            )
+            .order_by(
+                "-search_count",
+                "-last_searched_at",
+                "normalized_query",
+            )[:5]
+        )
+
+        serializer = (
+            PopularSearchSerializer(
+                popular_searches,
+                many=True,
+            )
+        )
+
+        return Response(
+            serializer.data
         )

@@ -512,6 +512,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
+    function listingViewsText(listing) {
+        const viewsCount = Number(
+            listing.views_count || 0
+        );
+
+        return viewsCount === 1
+            ? "1 view"
+            : `${viewsCount} views`;
+    }
+
+
     /* =========================================================
        Render listing
        ========================================================= */
@@ -612,6 +623,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                                     listing
                                 )}
                             </button>
+
+                            <span>·</span>
+
+                            <span>
+                                ${escapeHtml(
+                                    listingViewsText(
+                                        listing
+                                    )
+                                )}
+                            </span>
                         </p>
                     </div>
 

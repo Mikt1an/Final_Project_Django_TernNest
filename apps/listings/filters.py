@@ -32,6 +32,7 @@ LISTING_ORDERING_CHOICES = (
     ("-price_per_night", "Price: high to low"),
     ("-rating", "Rating: high to low"),
     ("rating", "Rating: low to high"),
+    ("popular", "Most popular"),
 )
 
 
@@ -372,6 +373,17 @@ def filter_listings(queryset, query_params):
     queryset = queryset.distinct()
 
     ordering = filters["ordering"]
+
+    if ordering == "popular":
+        return queryset.order_by(
+            "-views_count_value",
+            "-reviews_count_value",
+            F("average_rating").desc(
+                nulls_last=True
+            ),
+            "-created_at",
+            "pk",
+        )
 
     if ordering == "-rating":
         return queryset.order_by(

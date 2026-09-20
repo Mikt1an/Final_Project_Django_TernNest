@@ -9,6 +9,8 @@ from apps.listings.views import (
     ListingImageDetailView,
     ListingImageListCreateView,
     ListingListCreateView,
+    ListingViewHistoryView,
+    PopularSearchListView,
 )
 
 
@@ -35,6 +37,16 @@ urlpatterns = [
         "favorites/<int:pk>/",
         FavoriteDetailView.as_view(),
         name="favorite-detail",
+    ),
+    path(
+        "view-history/",
+        ListingViewHistoryView.as_view(),
+        name="listing-view-history",
+    ),
+    path(
+        "popular-searches/",
+        PopularSearchListView.as_view(),
+        name="popular-search-list",
     ),
     path(
         "",

@@ -7,6 +7,9 @@ document.addEventListener(
         const amenitiesApiUrl =
             "/api/v1/listings/amenities/";
 
+        const viewHistoryApiUrl =
+            "/api/v1/listings/view-history/";
+
         const form =
             document.getElementById(
                 "listing-search-form"
@@ -15,6 +18,16 @@ document.addEventListener(
         const listingsGrid =
             document.getElementById(
                 "listings-grid"
+            );
+
+        const recentlyViewedSection =
+            document.getElementById(
+                "recently-viewed-section"
+            );
+
+        const recentlyViewedGrid =
+            document.getElementById(
+                "recently-viewed-grid"
             );
 
         const resultsSummary =
@@ -474,6 +487,16 @@ document.addEventListener(
             );
         }
 
+        function viewsText(listing) {
+            const viewsCount = Number(
+                listing.views_count || 0
+            );
+
+            return viewsCount === 1
+                ? "1 view"
+                : `${viewsCount} views`;
+        }
+
         function updateFavoriteButton(
             button,
             listing
@@ -594,19 +617,27 @@ document.addEventListener(
             }
         }
 
-        function renderListings(listings) {
-            listingsGrid.innerHTML = "";
+        function renderListings(
+            listings,
+            {
+                targetGrid = listingsGrid,
+                updateSummary = true,
+            } = {}
+        ) {
+            targetGrid.innerHTML = "";
 
             const count =
                 listings.length;
 
-            resultsSummary.textContent =
-                count === 1
-                    ? "1 stay found"
-                    : `${count} stays found`;
+            if (updateSummary) {
+                resultsSummary.textContent =
+                    count === 1
+                        ? "1 stay found"
+                        : `${count} stays found`;
+            }
 
             if (!count) {
-                listingsGrid.innerHTML = `
+                targetGrid.innerHTML = `
                     <div
                         class="
                             empty-state
@@ -632,7 +663,7 @@ document.addEventListener(
                     </div>
                 `;
 
-                listingsGrid
+                targetGrid
                     .querySelector(
                         "[data-clear-search]"
                     )
@@ -783,6 +814,18 @@ document.addEventListener(
 
                             <p
                                 class="
+                                    listing-card__reviews
+                                "
+                            >
+                                ${escapeHtml(
+                                    viewsText(
+                                        listing
+                                    )
+                                )}
+                            </p>
+
+                            <p
+                                class="
                                     listing-card__details
                                 "
                             >
@@ -854,11 +897,128 @@ document.addEventListener(
                         }
                     );
 
-                    listingsGrid.appendChild(
+                    targetGrid.appendChild(
                         card
                     );
                 }
             );
+        }
+
+        function renderRecentlyViewed(
+            historyItems
+        ) {
+            if (
+                !recentlyViewedSection
+                || !recentlyViewedGrid
+            ) {
+                return;
+            }
+
+            const seenListingIds =
+                new Set();
+
+            const listings = [];
+
+            historyItems.forEach(
+                historyItem => {
+                    const listing =
+                        historyItem.listing;
+
+                    if (
+                        !listing
+                        || !listing.is_active
+                        || seenListingIds.has(
+                            listing.id
+                        )
+                    ) {
+                        return;
+                    }
+
+                    seenListingIds.add(
+                        listing.id
+                    );
+
+                    listings.push(
+                        listing
+                    );
+                }
+            );
+
+            const recentListings =
+                listings.slice(0, 6);
+
+            if (!recentListings.length) {
+                recentlyViewedSection.hidden =
+                    true;
+
+                recentlyViewedGrid.innerHTML =
+                    "";
+
+                return;
+            }
+
+            recentlyViewedSection.hidden =
+                false;
+
+            renderListings(
+                recentListings,
+                {
+                    targetGrid:
+                        recentlyViewedGrid,
+                    updateSummary: false,
+                }
+            );
+        }
+
+        async function loadRecentlyViewed() {
+            if (
+                !recentlyViewedSection
+                || !recentlyViewedGrid
+            ) {
+                return;
+            }
+
+            const auth =
+                window.TernNestAuth;
+
+            if (
+                !auth
+                || (
+                    !auth.getAccessToken()
+                    && !auth.getRefreshToken()
+                )
+            ) {
+                recentlyViewedSection.hidden =
+                    true;
+
+                return;
+            }
+
+            try {
+                const response =
+                    await auth.authenticatedFetch(
+                        viewHistoryApiUrl
+                    );
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Could not load view history."
+                    );
+                }
+
+                const data =
+                    await response.json();
+
+                renderRecentlyViewed(
+                    getResults(data)
+                );
+            } catch (error) {
+                recentlyViewedSection.hidden =
+                    true;
+
+                recentlyViewedGrid.innerHTML =
+                    "";
+            }
         }
 
         async function loadListings(
@@ -1157,6 +1317,8 @@ document.addEventListener(
             await loadListings(
                 buildQueryParameters()
             );
+
+            await loadRecentlyViewed();
         }
 
         initializePage();

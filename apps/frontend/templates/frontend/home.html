@@ -5,6 +5,78 @@
 
 {% block content %}
 
+<style>
+    .popular-searches-strip {
+        background: #f7f9f7;
+        border-bottom: 1px solid #e4ebe8;
+    }
+
+    .popular-searches-strip[hidden] {
+        display: none;
+    }
+
+    .popular-searches-strip__inner {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding-top: 1.25rem;
+        padding-bottom: 1.25rem;
+    }
+
+    .popular-searches-strip__title {
+        margin: 0;
+        color: #173c36;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .popular-searches-strip__list {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .popular-searches-strip__button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-height: 2.5rem;
+        padding: 0.55rem 0.9rem;
+        border: 1px solid #d5e1dd;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #173c36;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+            border-color 0.2s ease,
+            color 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .popular-searches-strip__button:hover {
+        border-color: #f27658;
+        color: #d85638;
+        transform: translateY(-1px);
+    }
+
+    .popular-searches-strip__count {
+        color: #72857f;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    @media (max-width: 640px) {
+        .popular-searches-strip__inner {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+</style>
+
 <section class="hero">
     <div class="container hero__content">
         <div class="hero__text">
@@ -263,6 +335,54 @@
     </div>
 </section>
 
+<section
+    id="popular-searches-section"
+    class="popular-searches-strip"
+    hidden
+>
+    <div
+        class="
+            container
+            popular-searches-strip__inner
+        "
+    >
+        <p class="popular-searches-strip__title">
+            Popular searches
+        </p>
+
+        <div
+            id="popular-searches-list"
+            class="popular-searches-strip__list"
+            aria-label="Popular searches"
+        ></div>
+    </div>
+</section>
+
+<section
+    id="recently-viewed-section"
+    class="content-section"
+    hidden
+>
+    <div class="container">
+        <div class="section-heading">
+            <div>
+                <span class="eyebrow">
+                    Continue exploring
+                </span>
+
+                <h2>
+                    Recently viewed
+                </h2>
+            </div>
+        </div>
+
+        <div
+            id="recently-viewed-grid"
+            class="listings-grid"
+        ></div>
+    </div>
+</section>
+
 <section class="content-section">
     <div class="container">
         <div class="section-heading">
@@ -295,6 +415,10 @@
                     >
                         <option value="-created_at" selected>
                             Newest first
+                        </option>
+
+                        <option value="popular">
+                            Most popular
                         </option>
 
                         <option value="created_at">
@@ -342,6 +466,11 @@
 {% block extra_js %}
 <script
     src="{% static 'frontend/js/home.js' %}"
+    defer
+></script>
+
+<script
+    src="{% static 'frontend/js/popular_searches.js' %}"
     defer
 ></script>
 {% endblock %}

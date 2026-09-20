@@ -1,4 +1,8 @@
-from datetime import date, datetime, timedelta
+from datetime import (
+    date,
+    datetime,
+    timedelta,
+)
 
 from django.core.exceptions import (
     ValidationError as DjangoValidationError,
@@ -7,47 +11,64 @@ from django.db.models import Avg
 
 from rest_framework import serializers
 
-from apps.accounts.serializers import UserPublicSerializer
+from apps.accounts.serializers import (
+    UserPublicSerializer,
+)
+from apps.listings.constants import (
+    MIN_CLEANING_GAP_HOURS,
+)
 from apps.listings.models import (
     Amenity,
     Favorite,
     Listing,
     ListingImage,
+    ListingView,
 )
 from apps.listings.validators import (
     validate_amenities_count,
     validate_max_images,
     validate_min_images,
 )
-from apps.listings.constants import MIN_CLEANING_GAP_HOURS
 
 
-class AmenitySerializer(serializers.ModelSerializer):
+class AmenitySerializer(
+    serializers.ModelSerializer,
+):
     class Meta:
         model = Amenity
+
         fields = (
             "id",
             "name",
         )
-        read_only_fields = ("id",)
+
+        read_only_fields = (
+            "id",
+        )
 
 
-class ListingImageSerializer(serializers.ModelSerializer):
+class ListingImageSerializer(
+    serializers.ModelSerializer,
+):
     class Meta:
         model = ListingImage
+
         fields = (
             "id",
             "image",
             "is_main",
             "created_at",
         )
+
         read_only_fields = (
             "id",
             "created_at",
         )
 
     def create(self, validated_data):
-        listing = validated_data.get("listing")
+        listing = validated_data.get(
+            "listing"
+        )
 
         if listing is not None:
             try:
@@ -63,10 +84,14 @@ class ListingImageSerializer(serializers.ModelSerializer):
                     }
                 ) from error
 
-        return super().create(validated_data)
+        return super().create(
+            validated_data
+        )
 
 
-class ListingReadSerializer(serializers.ModelSerializer):
+class ListingReadSerializer(
+    serializers.ModelSerializer,
+):
     owner = UserPublicSerializer(
         read_only=True,
     )
@@ -81,11 +106,25 @@ class ListingReadSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    rating = serializers.SerializerMethodField()
-    reviews_count = serializers.SerializerMethodField()
+    rating = (
+        serializers.SerializerMethodField()
+    )
 
-    is_favorite = serializers.SerializerMethodField()
-    favorite_id = serializers.SerializerMethodField()
+    reviews_count = (
+        serializers.SerializerMethodField()
+    )
+
+    views_count = (
+        serializers.SerializerMethodField()
+    )
+
+    is_favorite = (
+        serializers.SerializerMethodField()
+    )
+
+    favorite_id = (
+        serializers.SerializerMethodField()
+    )
 
     class Meta:
         model = Listing
@@ -112,6 +151,9 @@ class ListingReadSerializer(serializers.ModelSerializer):
             # Reviews
             "rating",
             "reviews_count",
+
+            # Views
+            "views_count",
 
             # Favorites
             "is_favorite",
@@ -171,8 +213,22 @@ class ListingReadSerializer(serializers.ModelSerializer):
             .count()
         )
 
+    def get_views_count(self, obj):
+        value = getattr(
+            obj,
+            "views_count_value",
+            None,
+        )
+
+        if value is not None:
+            return value
+
+        return obj.views.count()
+
     def _get_favorite(self, obj):
-        request = self.context.get("request")
+        request = self.context.get(
+            "request"
+        )
 
         if (
             request is None
@@ -185,7 +241,10 @@ class ListingReadSerializer(serializers.ModelSerializer):
             f"{request.user.pk}"
         )
 
-        if hasattr(obj, cache_name):
+        if hasattr(
+            obj,
+            cache_name,
+        ):
             return getattr(
                 obj,
                 cache_name,
@@ -216,7 +275,9 @@ class ListingReadSerializer(serializers.ModelSerializer):
         )
 
     def get_favorite_id(self, obj):
-        favorite = self._get_favorite(obj)
+        favorite = self._get_favorite(
+            obj
+        )
 
         if favorite is None:
             return None
@@ -224,19 +285,67 @@ class ListingReadSerializer(serializers.ModelSerializer):
         return favorite.id
 
 
-class ListingWriteSerializer(serializers.ModelSerializer):
-    amenities = serializers.PrimaryKeyRelatedField(
-        queryset=Amenity.objects.all(),
-        many=True,
-        required=False,
+class ListingViewHistorySerializer(
+    serializers.ModelSerializer,
+):
+    listing = ListingReadSerializer(
+        read_only=True,
     )
 
-    earliest_check_in_time = serializers.TimeField(
-        required=True,
+    last_viewed_at = (
+        serializers.DateTimeField(
+            source="updated_at",
+            read_only=True,
+        )
     )
 
-    latest_check_out_time = serializers.TimeField(
-        required=True,
+    class Meta:
+        model = ListingView
+
+        fields = (
+            "id",
+            "listing",
+            "viewed_on",
+            "last_viewed_at",
+        )
+
+        read_only_fields = fields
+
+
+class PopularSearchSerializer(
+    serializers.Serializer,
+):
+    query = serializers.CharField(
+        source="normalized_query",
+        read_only=True,
+    )
+
+    search_count = serializers.IntegerField(
+        read_only=True,
+    )
+
+
+class ListingWriteSerializer(
+    serializers.ModelSerializer,
+):
+    amenities = (
+        serializers.PrimaryKeyRelatedField(
+            queryset=Amenity.objects.all(),
+            many=True,
+            required=False,
+        )
+    )
+
+    earliest_check_in_time = (
+        serializers.TimeField(
+            required=True,
+        )
+    )
+
+    latest_check_out_time = (
+        serializers.TimeField(
+            required=True,
+        )
     )
 
     class Meta:
@@ -261,17 +370,26 @@ class ListingWriteSerializer(serializers.ModelSerializer):
             "is_active",
         )
 
-        read_only_fields = ("id",)
+        read_only_fields = (
+            "id",
+        )
 
-    def validate_amenities(self, amenities):
+    def validate_amenities(
+        self,
+        amenities,
+    ):
         try:
             validate_amenities_count(
                 current_count=0,
-                new_count=len(amenities),
+                new_count=len(
+                    amenities
+                ),
             )
         except DjangoValidationError as error:
             raise serializers.ValidationError(
-                list(error.messages)
+                list(
+                    error.messages
+                )
             ) from error
 
         return amenities
@@ -298,11 +416,12 @@ class ListingWriteSerializer(serializers.ModelSerializer):
 
         else:
             current_listing_type = (
-                Listing.ListingType.APARTMENT
+                Listing
+                .ListingType
+                .APARTMENT
             )
 
             current_bedrooms = 1
-
             current_check_in_time = None
             current_check_out_time = None
 
@@ -316,14 +435,18 @@ class ListingWriteSerializer(serializers.ModelSerializer):
             current_bedrooms,
         )
 
-        earliest_check_in_time = attrs.get(
-            "earliest_check_in_time",
-            current_check_in_time,
+        earliest_check_in_time = (
+            attrs.get(
+                "earliest_check_in_time",
+                current_check_in_time,
+            )
         )
 
-        latest_check_out_time = attrs.get(
-            "latest_check_out_time",
-            current_check_out_time,
+        latest_check_out_time = (
+            attrs.get(
+                "latest_check_out_time",
+                current_check_out_time,
+            )
         )
 
         if (
@@ -336,41 +459,58 @@ class ListingWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {
                     "bedrooms": (
-                        "Apartments and houses must "
-                        "have at least one bedroom."
+                        "Apartments and houses "
+                        "must have at least one "
+                        "bedroom."
                     )
                 }
             )
 
         if (
-            earliest_check_in_time is not None
-            and latest_check_out_time is not None
+            earliest_check_in_time
+            is not None
+            and latest_check_out_time
+            is not None
         ):
-            check_in_datetime = datetime.combine(
-                date.min,
-                earliest_check_in_time,
+            check_in_datetime = (
+                datetime.combine(
+                    date.min,
+                    earliest_check_in_time,
+                )
             )
-            check_out_datetime = datetime.combine(
-                date.min,
-                latest_check_out_time,
+
+            check_out_datetime = (
+                datetime.combine(
+                    date.min,
+                    latest_check_out_time,
+                )
             )
 
             cleaning_gap = (
-                    check_in_datetime
-                    - check_out_datetime
+                check_in_datetime
+                - check_out_datetime
             )
 
-            minimum_cleaning_gap = timedelta(
-                hours=MIN_CLEANING_GAP_HOURS
+            minimum_cleaning_gap = (
+                timedelta(
+                    hours=(
+                        MIN_CLEANING_GAP_HOURS
+                    )
+                )
             )
 
-            if cleaning_gap < minimum_cleaning_gap:
+            if (
+                cleaning_gap
+                < minimum_cleaning_gap
+            ):
                 raise serializers.ValidationError(
                     {
                         "earliest_check_in_time": (
-                            "Check-in time must be at least "
-                            f"{MIN_CLEANING_GAP_HOURS} hours "
-                            "after check-out time."
+                            "Check-in time must "
+                            "be at least "
+                            f"{MIN_CLEANING_GAP_HOURS} "
+                            "hours after check-out "
+                            "time."
                         )
                     }
                 )
@@ -390,7 +530,9 @@ class ListingWriteSerializer(serializers.ModelSerializer):
         ):
             try:
                 validate_min_images(
-                    self.instance.images.count()
+                    self.instance
+                    .images
+                    .count()
                 )
             except DjangoValidationError as error:
                 raise serializers.ValidationError(
@@ -403,7 +545,10 @@ class ListingWriteSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    def create(self, validated_data):
+    def create(
+        self,
+        validated_data,
+    ):
         validated_data["is_active"] = False
 
         return super().create(
@@ -411,7 +556,9 @@ class ListingWriteSerializer(serializers.ModelSerializer):
         )
 
 
-class FavoriteSerializer(serializers.ModelSerializer):
+class FavoriteSerializer(
+    serializers.ModelSerializer,
+):
     class Meta:
         model = Favorite
 

@@ -7,7 +7,10 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import (
+    APIClient,
+    APITestCase,
+)
 
 from apps.bookings.models import Booking, BlockedPeriod
 from apps.listings.models import (
@@ -15,6 +18,7 @@ from apps.listings.models import (
     Favorite,
     Listing,
     ListingImage,
+    ListingView,
 )
 from apps.reviews.models import Review
 
@@ -2465,4 +2469,392 @@ class ListingFilteringAPITests(
         self.assertIn(
             listing.pk,
             self.listing_ids(response),
+        )
+
+
+class ListingViewAPITests(APITestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            email="view.owner@example.com",
+            password="StrongPass123!",
+            first_name="Olivia",
+            last_name="Owner",
+            phone_number="+491700000501",
+        )
+
+        self.guest = User.objects.create_user(
+            email="view.guest@example.com",
+            password="StrongPass123!",
+            first_name="Grace",
+            last_name="Guest",
+            phone_number="+491700000502",
+        )
+
+        self.other_user = User.objects.create_user(
+            email="view.other@example.com",
+            password="StrongPass123!",
+            first_name="Oscar",
+            last_name="Viewer",
+            phone_number="+491700000503",
+        )
+
+        self.listing = self.create_listing(
+            title="Viewed apartment",
+        )
+
+        self.detail_url = reverse(
+            "listings:listing-detail",
+            kwargs={"pk": self.listing.pk},
+        )
+
+        self.list_url = reverse(
+            "listings:listing-list-create"
+        )
+
+        self.history_url = reverse(
+            "listings:listing-view-history"
+        )
+
+    def create_listing(
+        self,
+        *,
+        title,
+        price="100.00",
+    ):
+        return Listing.objects.create(
+            owner=self.owner,
+            title=title,
+            description=(
+                "Listing used for view history tests."
+            ),
+            listing_type=(
+                Listing.ListingType.APARTMENT
+            ),
+            country="Germany",
+            city="Munich",
+            address=f"{title} address",
+            earliest_check_in_time=time(15, 0),
+            latest_check_out_time=time(11, 0),
+            price_per_night=Decimal(price),
+            max_guests=4,
+            bedrooms=2,
+            beds=2,
+            bathrooms=1,
+            is_active=True,
+        )
+
+    def response_items(self, response):
+        if (
+            isinstance(response.data, dict)
+            and "results" in response.data
+        ):
+            return response.data["results"]
+
+        return response.data
+
+    def add_views(
+        self,
+        *,
+        listing,
+        count,
+    ):
+        for index in range(count):
+            ListingView.objects.create(
+                listing=listing,
+                viewer_key=(
+                    f"test:{listing.pk}:{index}"
+                ),
+                viewed_on=timezone.localdate(),
+            )
+
+    def test_authenticated_user_counts_once_per_day(
+        self,
+    ):
+        self.client.force_authenticate(
+            user=self.guest
+        )
+
+        first_response = self.client.get(
+            self.detail_url
+        )
+        second_response = self.client.get(
+            self.detail_url
+        )
+
+        self.assertEqual(
+            first_response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            second_response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            ListingView.objects.count(),
+            1,
+        )
+        self.assertEqual(
+            first_response.data["views_count"],
+            1,
+        )
+        self.assertEqual(
+            second_response.data["views_count"],
+            1,
+        )
+
+        listing_view = ListingView.objects.get()
+
+        self.assertEqual(
+            listing_view.user,
+            self.guest,
+        )
+        self.assertEqual(
+            listing_view.viewer_key,
+            f"user:{self.guest.pk}",
+        )
+        self.assertEqual(
+            listing_view.viewed_on,
+            timezone.localdate(),
+        )
+
+    def test_anonymous_session_counts_once_per_day(
+        self,
+    ):
+        first_response = self.client.get(
+            self.detail_url
+        )
+        second_response = self.client.get(
+            self.detail_url
+        )
+
+        self.assertEqual(
+            first_response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            second_response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            ListingView.objects.count(),
+            1,
+        )
+        self.assertIsNone(
+            ListingView.objects.get().user
+        )
+
+    def test_different_anonymous_sessions_are_separate(
+        self,
+    ):
+        first_client = APIClient()
+        second_client = APIClient()
+
+        first_client.get(
+            self.detail_url
+        )
+        second_client.get(
+            self.detail_url
+        )
+
+        self.assertEqual(
+            ListingView.objects.count(),
+            2,
+        )
+
+    def test_owner_view_is_not_counted(self):
+        self.client.force_authenticate(
+            user=self.owner
+        )
+
+        response = self.client.get(
+            self.detail_url
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data["views_count"],
+            0,
+        )
+        self.assertEqual(
+            ListingView.objects.count(),
+            0,
+        )
+
+    def test_new_day_creates_new_view(self):
+        ListingView.objects.create(
+            listing=self.listing,
+            user=self.guest,
+            viewer_key=f"user:{self.guest.pk}",
+            viewed_on=(
+                timezone.localdate()
+                - timedelta(days=1)
+            ),
+        )
+
+        self.client.force_authenticate(
+            user=self.guest
+        )
+
+        response = self.client.get(
+            self.detail_url
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            ListingView.objects.count(),
+            2,
+        )
+        self.assertEqual(
+            response.data["views_count"],
+            2,
+        )
+
+    def test_view_history_requires_authentication(
+        self,
+    ):
+        response = self.client.get(
+            self.history_url
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_history_contains_only_current_user_views(
+        self,
+    ):
+        own_view = ListingView.objects.create(
+            listing=self.listing,
+            user=self.guest,
+            viewer_key=f"user:{self.guest.pk}",
+            viewed_on=timezone.localdate(),
+        )
+
+        ListingView.objects.create(
+            listing=self.listing,
+            user=self.other_user,
+            viewer_key=(
+                f"user:{self.other_user.pk}"
+            ),
+            viewed_on=timezone.localdate(),
+        )
+
+        ListingView.objects.create(
+            listing=self.listing,
+            viewer_key="test:anonymous",
+            viewed_on=timezone.localdate(),
+        )
+
+        self.client.force_authenticate(
+            user=self.guest
+        )
+
+        response = self.client.get(
+            self.history_url
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        items = self.response_items(response)
+
+        self.assertEqual(
+            len(items),
+            1,
+        )
+        self.assertEqual(
+            items[0]["id"],
+            own_view.pk,
+        )
+        self.assertEqual(
+            items[0]["listing"]["id"],
+            self.listing.pk,
+        )
+
+    def test_popular_ordering_uses_view_count(
+        self,
+    ):
+        popular = self.create_listing(
+            title="Popular apartment",
+        )
+        less_popular = self.create_listing(
+            title="Less popular apartment",
+        )
+
+        self.add_views(
+            listing=popular,
+            count=3,
+        )
+        self.add_views(
+            listing=less_popular,
+            count=1,
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {"ordering": "popular"},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            [
+                item["id"]
+                for item in self.response_items(
+                    response
+                )
+            ],
+            [
+                popular.pk,
+                less_popular.pk,
+                self.listing.pk,
+            ],
+        )
+
+    def test_view_history_does_not_block_deletion(
+        self,
+    ):
+        self.client.force_authenticate(
+            user=self.guest
+        )
+        self.client.get(
+            self.detail_url
+        )
+
+        self.assertEqual(
+            ListingView.objects.count(),
+            1,
+        )
+
+        self.client.force_authenticate(
+            user=self.owner
+        )
+
+        response = self.client.delete(
+            self.detail_url
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+        self.assertFalse(
+            Listing.objects.filter(
+                pk=self.listing.pk
+            ).exists()
+        )
+        self.assertEqual(
+            ListingView.objects.count(),
+            0,
         )
