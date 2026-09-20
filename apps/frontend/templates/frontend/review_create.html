@@ -1,0 +1,2521 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}
+Review your stay | TernNest
+{% endblock %}
+
+
+{% block content %}
+
+<section class="page-heading">
+    <div class="container">
+
+        <span class="eyebrow">
+            Your stay
+        </span>
+
+        <h1 id="page-title">
+            Leave a review
+        </h1>
+
+        <p id="page-description">
+            Share your experience with other TernNest guests.
+        </p>
+
+    </div>
+</section>
+
+
+<section class="content-section content-section--compact">
+
+    <div class="container">
+
+        <div class="review-create-layout">
+
+            <!-- ===================================================
+                 LOADING
+                 =================================================== -->
+
+            <div
+                id="review-loading"
+                class="empty-state"
+            >
+                <p>
+                    Loading booking...
+                </p>
+            </div>
+
+
+            <!-- ===================================================
+                 MAIN CONTENT
+                 =================================================== -->
+
+            <div
+                id="review-content"
+                hidden
+            >
+
+                <!-- PROPERTY -->
+
+                <article class="review-property-card">
+
+                    <img
+                        id="listing-image"
+                        class="review-property-card__image"
+                        alt=""
+                        hidden
+                    >
+
+
+                    <div
+                        id="listing-image-placeholder"
+                        class="review-property-card__placeholder"
+                    >
+                        No image
+                    </div>
+
+
+                    <div class="review-property-card__content">
+
+                        <span class="review-property-card__label">
+                            You stayed at
+                        </span>
+
+
+                        <h2 id="listing-title">
+                        </h2>
+
+
+                        <p
+                            id="booking-dates"
+                            class="review-property-card__dates"
+                        >
+                        </p>
+
+                    </div>
+
+                </article>
+
+
+                <!-- REVIEW FORM -->
+
+                <form
+                    id="review-form"
+                    class="review-form"
+                >
+
+                    <!-- RATING -->
+
+                    <div class="review-form__section">
+
+                        <h2>
+                            How was your stay?
+                        </h2>
+
+                        <p>
+                            Choose a rating from 1 to 5 stars.
+                            Rating is optional.
+                        </p>
+
+
+                        <div
+                            id="rating-stars"
+                            class="rating-stars"
+                            role="group"
+                            aria-label="Rating"
+                        >
+
+                            <button
+                                type="button"
+                                data-rating="1"
+                                aria-label="1 star"
+                            >
+                                ★
+                            </button>
+
+                            <button
+                                type="button"
+                                data-rating="2"
+                                aria-label="2 stars"
+                            >
+                                ★
+                            </button>
+
+                            <button
+                                type="button"
+                                data-rating="3"
+                                aria-label="3 stars"
+                            >
+                                ★
+                            </button>
+
+                            <button
+                                type="button"
+                                data-rating="4"
+                                aria-label="4 stars"
+                            >
+                                ★
+                            </button>
+
+                            <button
+                                type="button"
+                                data-rating="5"
+                                aria-label="5 stars"
+                            >
+                                ★
+                            </button>
+
+                        </div>
+
+
+                        <div class="rating-info">
+
+                            <span id="rating-label">
+                                No rating selected
+                            </span>
+
+
+                            <button
+                                id="clear-rating"
+                                type="button"
+                                class="rating-clear"
+                                hidden
+                            >
+                                Clear rating
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- LIKED -->
+
+                    <div class="review-form__section">
+
+                        <label class="form-field form-field--full">
+
+                            <span>
+                                What did you like?
+                            </span>
+
+                            <textarea
+                                id="review-liked"
+                                name="liked"
+                                rows="5"
+                                placeholder="Clean apartment, great location, comfortable bed..."
+                            ></textarea>
+
+                        </label>
+
+                    </div>
+
+
+                    <!-- DISLIKED -->
+
+                    <div class="review-form__section">
+
+                        <label class="form-field form-field--full">
+
+                            <span>
+                                What could be better?
+                            </span>
+
+                            <textarea
+                                id="review-disliked"
+                                name="disliked"
+                                rows="5"
+                                placeholder="Anything future guests should know..."
+                            ></textarea>
+
+                        </label>
+
+
+                        <small class="review-hint">
+                            At least one text field must be filled.
+                        </small>
+
+                    </div>
+
+
+                    <!-- EXISTING PHOTOS -->
+
+                    <div
+                        id="existing-images-section"
+                        class="review-form__section"
+                        hidden
+                    >
+
+                        <h2>
+                            Current photos
+                        </h2>
+
+                        <p>
+                            You can remove previously uploaded photos.
+                        </p>
+
+
+                        <div
+                            id="existing-images"
+                            class="existing-images"
+                        >
+                        </div>
+
+                    </div>
+
+
+                    <!-- NEW PHOTOS -->
+
+                    <div class="review-form__section">
+
+                        <label class="form-field form-field--full">
+
+                            <span>
+                                Add photos
+                            </span>
+
+                            <input
+                                id="review-images"
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                multiple
+                            >
+
+                        </label>
+
+
+                        <small class="review-hint">
+                            Optional. Maximum 3 photos per review.
+                        </small>
+
+
+                        <div
+                            id="selected-images"
+                            class="selected-images"
+                        >
+                        </div>
+
+                    </div>
+
+
+                    <!-- MESSAGE -->
+
+                    <div
+                        id="review-message"
+                        class="form-message"
+                        hidden
+                    >
+                    </div>
+
+
+                    <!-- ACTIONS -->
+
+                    <div class="review-form__actions">
+
+                        <button
+                            id="submit-review"
+                            type="submit"
+                            class="button button--primary"
+                        >
+                            Submit review
+                        </button>
+
+
+                        <a
+                            id="back-to-listing"
+                            href="#"
+                            class="button button--secondary"
+                        >
+                            Back to property
+                        </a>
+
+
+                        <button
+                            id="delete-review"
+                            type="button"
+                            class="button button--danger"
+                            hidden
+                        >
+                            Delete review
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+
+            <!-- ===================================================
+                 SUCCESS
+                 =================================================== -->
+
+            <div
+                id="review-success"
+                class="review-success"
+                hidden
+            >
+
+                <div class="review-success__icon">
+                    ✓
+                </div>
+
+
+                <h2 id="success-title">
+                    Thank you for your review!
+                </h2>
+
+
+                <p id="review-success-text">
+                    Your review has been published.
+                </p>
+
+
+                <div class="review-success__actions">
+
+                    <a
+                        id="review-listing-link"
+                        href="#"
+                        class="button button--primary"
+                    >
+                        View property
+                    </a>
+
+
+                    <a
+                        href="/dashboard/"
+                        class="button button--secondary"
+                    >
+                        Back to dashboard
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<style>
+
+.review-create-layout {
+    width: min(100%, 780px);
+    margin-inline: auto;
+}
+
+
+/* =============================================================
+   PROPERTY
+   ============================================================= */
+
+.review-property-card {
+    display: grid;
+
+    grid-template-columns:
+        150px
+        minmax(0, 1fr);
+
+    gap: 22px;
+
+    align-items: center;
+
+    margin-bottom: 24px;
+    padding: 18px;
+
+    background:
+        var(--color-surface);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius:
+        var(--border-radius);
+
+    box-shadow:
+        0 10px 30px
+        rgba(31, 64, 55, 0.08);
+}
+
+
+.review-property-card__image,
+.review-property-card__placeholder {
+    width: 150px;
+    height: 110px;
+
+    border-radius: 12px;
+}
+
+
+.review-property-card__image {
+    object-fit: cover;
+}
+
+
+.review-property-card__placeholder {
+    display: grid;
+
+    place-items: center;
+
+    color:
+        var(--color-text-soft);
+
+    background: #edf2ef;
+}
+
+
+.review-property-card__content {
+    min-width: 0;
+}
+
+
+.review-property-card__label {
+    color:
+        var(--color-text-soft);
+
+    font-size: 13px;
+}
+
+
+.review-property-card h2 {
+    margin: 5px 0 8px;
+
+    font-size: 22px;
+}
+
+
+.review-property-card__dates {
+    margin: 0;
+
+    color:
+        var(--color-text-soft);
+}
+
+
+/* =============================================================
+   FORM
+   ============================================================= */
+
+.review-form {
+    padding: 34px;
+
+    background:
+        var(--color-surface);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius:
+        var(--border-radius);
+
+    box-shadow:
+        0 14px 40px
+        rgba(31, 64, 55, 0.09);
+}
+
+
+.review-form__section {
+    padding-bottom: 28px;
+    margin-bottom: 28px;
+
+    border-bottom:
+        1px solid
+        var(--color-border);
+}
+
+
+.review-form__section h2 {
+    margin: 0 0 7px;
+
+    font-size: 21px;
+}
+
+
+.review-form__section > p {
+    margin: 0 0 18px;
+
+    color:
+        var(--color-text-soft);
+
+    font-size: 14px;
+}
+
+
+.review-hint {
+    display: block;
+
+    margin-top: 7px;
+
+    color:
+        var(--color-text-soft);
+
+    font-size: 13px;
+}
+
+
+/* =============================================================
+   RATING
+   ============================================================= */
+
+.rating-stars {
+    display: flex;
+
+    gap: 6px;
+}
+
+
+.rating-stars button {
+    padding: 0;
+
+    color: #cbd3d0;
+
+    background: none;
+
+    border: 0;
+
+    cursor: pointer;
+
+    font-size: 40px;
+
+    line-height: 1;
+
+    transition:
+        color 120ms ease,
+        transform 120ms ease;
+}
+
+
+.rating-stars button:hover {
+    transform:
+        translateY(-2px);
+}
+
+
+.rating-stars button.is-active {
+    color: #e5a93b;
+}
+
+
+.rating-info {
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    margin-top: 12px;
+
+    color:
+        var(--color-text-soft);
+
+    font-size: 13px;
+}
+
+
+.rating-clear {
+    padding: 0;
+
+    color:
+        var(--color-primary);
+
+    background: none;
+
+    border: 0;
+
+    cursor: pointer;
+
+    text-decoration: underline;
+}
+
+
+/* =============================================================
+   EXISTING IMAGES
+   ============================================================= */
+
+.existing-images {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 12px;
+}
+
+
+.existing-image {
+    position: relative;
+
+    overflow: hidden;
+
+    aspect-ratio: 4 / 3;
+
+    border-radius: 12px;
+
+    background: #edf2ef;
+}
+
+
+.existing-image img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+
+.existing-image__delete {
+    position: absolute;
+
+    top: 8px;
+    right: 8px;
+
+    width: 32px;
+    height: 32px;
+
+    display: grid;
+
+    place-items: center;
+
+    padding: 0;
+
+    color: white;
+
+    background:
+        rgba(26, 38, 34, 0.82);
+
+    border: 0;
+    border-radius: 50%;
+
+    cursor: pointer;
+
+    font-size: 18px;
+    font-weight: 800;
+}
+
+
+.existing-image__delete:hover {
+    background: #922f26;
+}
+
+
+/* =============================================================
+   SELECTED IMAGES
+   ============================================================= */
+
+.selected-images {
+    display: grid;
+
+    gap: 6px;
+
+    margin-top: 12px;
+
+    color:
+        var(--color-text-soft);
+
+    font-size: 13px;
+}
+
+
+/* =============================================================
+   ACTIONS / MESSAGE
+   ============================================================= */
+
+.review-form__actions,
+.review-success__actions {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    margin-top: 26px;
+}
+
+
+.form-message {
+    padding: 12px 14px;
+
+    border-radius: 10px;
+
+    font-size: 14px;
+}
+
+
+.form-message--error {
+    color: #922f26;
+
+    background: #fff0ed;
+}
+
+
+.form-message--success {
+    color: #176048;
+
+    background: #e6f6ef;
+}
+
+
+.button--danger {
+    color: white;
+
+    background: #a23b32;
+
+    border-color: #a23b32;
+}
+
+
+.button--danger:hover {
+    background: #8c3129;
+}
+
+
+/* =============================================================
+   SUCCESS
+   ============================================================= */
+
+.review-success {
+    padding: 50px 32px;
+
+    text-align: center;
+
+    background:
+        var(--color-surface);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius:
+        var(--border-radius);
+
+    box-shadow:
+        0 14px 40px
+        rgba(31, 64, 55, 0.09);
+}
+
+
+.review-success__icon {
+    width: 64px;
+    height: 64px;
+
+    display: grid;
+
+    place-items: center;
+
+    margin:
+        0
+        auto
+        20px;
+
+    color: #176048;
+
+    background: #e6f6ef;
+
+    border-radius: 50%;
+
+    font-size: 30px;
+
+    font-weight: 800;
+}
+
+
+.review-success h2 {
+    margin: 0 0 10px;
+}
+
+
+.review-success p {
+    max-width: 480px;
+
+    margin: 0 auto;
+
+    color:
+        var(--color-text-soft);
+
+    line-height: 1.6;
+}
+
+
+.review-success__actions {
+    justify-content: center;
+}
+
+
+/* =============================================================
+   MOBILE
+   ============================================================= */
+
+@media (max-width: 600px) {
+
+    .review-property-card {
+        grid-template-columns: 1fr;
+    }
+
+
+    .review-property-card__image,
+    .review-property-card__placeholder {
+        width: 100%;
+        height: 190px;
+    }
+
+
+    .review-form {
+        padding: 24px;
+    }
+
+
+    .rating-stars button {
+        font-size: 34px;
+    }
+
+
+    .existing-images {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+</style>
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    async () => {
+
+        /* =====================================================
+           DATA
+           ===================================================== */
+
+        const bookingId =
+            Number(
+                "{{ booking_id }}"
+            );
+
+
+        let currentBooking =
+            null;
+
+
+        let currentReview =
+            null;
+
+
+        let selectedRating =
+            null;
+
+
+        /* =====================================================
+           ELEMENTS
+           ===================================================== */
+
+        const loading =
+            document.getElementById(
+                "review-loading"
+            );
+
+
+        const content =
+            document.getElementById(
+                "review-content"
+            );
+
+
+        const success =
+            document.getElementById(
+                "review-success"
+            );
+
+
+        const pageTitle =
+            document.getElementById(
+                "page-title"
+            );
+
+
+        const pageDescription =
+            document.getElementById(
+                "page-description"
+            );
+
+
+        const form =
+            document.getElementById(
+                "review-form"
+            );
+
+
+        const listingTitle =
+            document.getElementById(
+                "listing-title"
+            );
+
+
+        const bookingDates =
+            document.getElementById(
+                "booking-dates"
+            );
+
+
+        const listingImage =
+            document.getElementById(
+                "listing-image"
+            );
+
+
+        const imagePlaceholder =
+            document.getElementById(
+                "listing-image-placeholder"
+            );
+
+
+        const likedInput =
+            document.getElementById(
+                "review-liked"
+            );
+
+
+        const dislikedInput =
+            document.getElementById(
+                "review-disliked"
+            );
+
+
+        const imagesInput =
+            document.getElementById(
+                "review-images"
+            );
+
+
+        const selectedImages =
+            document.getElementById(
+                "selected-images"
+            );
+
+
+        const existingImagesSection =
+            document.getElementById(
+                "existing-images-section"
+            );
+
+
+        const existingImages =
+            document.getElementById(
+                "existing-images"
+            );
+
+
+        const message =
+            document.getElementById(
+                "review-message"
+            );
+
+
+        const submitButton =
+            document.getElementById(
+                "submit-review"
+            );
+
+
+        const deleteReviewButton =
+            document.getElementById(
+                "delete-review"
+            );
+
+
+        const backToListing =
+            document.getElementById(
+                "back-to-listing"
+            );
+
+
+        const reviewListingLink =
+            document.getElementById(
+                "review-listing-link"
+            );
+
+
+        const successTitle =
+            document.getElementById(
+                "success-title"
+            );
+
+
+        const successText =
+            document.getElementById(
+                "review-success-text"
+            );
+
+
+        const ratingButtons =
+            Array.from(
+                document.querySelectorAll(
+                    "[data-rating]"
+                )
+            );
+
+
+        const ratingLabel =
+            document.getElementById(
+                "rating-label"
+            );
+
+
+        const clearRatingButton =
+            document.getElementById(
+                "clear-rating"
+            );
+
+
+        /* =====================================================
+           HELPERS
+           ===================================================== */
+
+        function getResults(data) {
+
+            if (Array.isArray(data)) {
+                return data;
+            }
+
+
+            return (
+                data.results
+                ||
+                []
+            );
+        }
+
+
+        function escapeHtml(value) {
+
+            if (
+                value === null
+                ||
+                value === undefined
+            ) {
+                return "";
+            }
+
+
+            const element =
+                document.createElement(
+                    "div"
+                );
+
+
+            element.textContent =
+                String(value);
+
+
+            return element.innerHTML;
+        }
+
+
+        function formatDate(value) {
+
+            if (!value) {
+                return "";
+            }
+
+
+            return (
+                new Intl.DateTimeFormat(
+                    "en-GB",
+                    {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                    }
+                )
+                .format(
+                    new Date(value)
+                )
+            );
+        }
+
+
+        function getMainImage(listing) {
+
+            if (
+                !listing.images
+                ||
+                listing.images.length === 0
+            ) {
+                return "";
+            }
+
+
+            const image =
+                listing.images.find(
+                    item =>
+                        item.is_main
+                )
+                ||
+                listing.images[0];
+
+
+            return image.image;
+        }
+
+
+        function formatErrors(data) {
+
+            if (!data) {
+                return (
+                    "Something went wrong."
+                );
+            }
+
+
+            if (
+                typeof data === "string"
+            ) {
+                return data;
+            }
+
+
+            if (data.detail) {
+                return data.detail;
+            }
+
+
+            const messages = [];
+
+
+            function collect(value) {
+
+                if (
+                    typeof value
+                    === "string"
+                ) {
+                    messages.push(
+                        value
+                    );
+
+                    return;
+                }
+
+
+                if (
+                    Array.isArray(value)
+                ) {
+                    value.forEach(
+                        collect
+                    );
+
+                    return;
+                }
+
+
+                if (
+                    value
+                    &&
+                    typeof value
+                    === "object"
+                ) {
+                    Object.values(
+                        value
+                    ).forEach(
+                        collect
+                    );
+                }
+            }
+
+
+            collect(data);
+
+
+            return (
+                messages.join(" ")
+                ||
+                "Something went wrong."
+            );
+        }
+
+
+        function showMessage(
+            text,
+            type="error"
+        ) {
+
+            message.hidden =
+                false;
+
+
+            message.textContent =
+                text;
+
+
+            message.className =
+                (
+                    "form-message "
+                    +
+                    `form-message--${type}`
+                );
+        }
+
+
+        function hideMessage() {
+
+            message.hidden =
+                true;
+
+
+            message.textContent =
+                "";
+        }
+
+
+        /* =====================================================
+           RATING
+           ===================================================== */
+
+        function updateStars() {
+
+            ratingButtons.forEach(
+                button => {
+
+                    const value =
+                        Number(
+                            button.dataset.rating
+                        );
+
+
+                    button.classList.toggle(
+                        "is-active",
+                        (
+                            selectedRating
+                            !== null
+                            &&
+                            value
+                            <= selectedRating
+                        )
+                    );
+                }
+            );
+
+
+            if (
+                selectedRating
+                === null
+            ) {
+                ratingLabel.textContent =
+                    "No rating selected";
+
+
+                clearRatingButton.hidden =
+                    true;
+
+
+                return;
+            }
+
+
+            ratingLabel.textContent =
+                (
+                    `${selectedRating} `
+                    +
+                    (
+                        selectedRating === 1
+                            ? "star"
+                            : "stars"
+                    )
+                );
+
+
+            clearRatingButton.hidden =
+                false;
+        }
+
+
+        ratingButtons.forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        selectedRating =
+                            Number(
+                                button.dataset.rating
+                            );
+
+
+                        updateStars();
+                    }
+                );
+            }
+        );
+
+
+        clearRatingButton.addEventListener(
+            "click",
+            () => {
+
+                selectedRating =
+                    null;
+
+
+                updateStars();
+            }
+        );
+
+
+        /* =====================================================
+           NEW IMAGE SELECTION
+           ===================================================== */
+
+        function renderSelectedImages() {
+
+            selectedImages.innerHTML =
+                "";
+
+
+            const files =
+                Array.from(
+                    imagesInput.files
+                );
+
+
+            files.forEach(
+                file => {
+
+                    const item =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    item.textContent =
+                        `• ${file.name}`;
+
+
+                    selectedImages
+                        .appendChild(
+                            item
+                        );
+                }
+            );
+        }
+
+
+        imagesInput.addEventListener(
+            "change",
+            () => {
+
+                hideMessage();
+
+
+                const files =
+                    Array.from(
+                        imagesInput.files
+                    );
+
+
+                const existingCount =
+                    currentReview
+                        ? (
+                            currentReview.images
+                            || []
+                        ).length
+                        : 0;
+
+
+                if (
+                    existingCount
+                    +
+                    files.length
+                    >
+                    3
+                ) {
+                    imagesInput.value =
+                        "";
+
+
+                    selectedImages.innerHTML =
+                        "";
+
+
+                    showMessage(
+                        (
+                            "A review can contain "
+                            +
+                            "a maximum of 3 photos."
+                        )
+                    );
+
+
+                    return;
+                }
+
+
+                renderSelectedImages();
+            }
+        );
+
+
+        /* =====================================================
+           EXISTING IMAGES
+           ===================================================== */
+
+        function renderExistingImages() {
+
+            existingImages.innerHTML =
+                "";
+
+
+            if (
+                !currentReview
+                ||
+                !currentReview.images
+                ||
+                currentReview.images.length
+                === 0
+            ) {
+                existingImagesSection.hidden =
+                    true;
+
+
+                return;
+            }
+
+
+            existingImagesSection.hidden =
+                false;
+
+
+            currentReview.images.forEach(
+                reviewImage => {
+
+                    const wrapper =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    wrapper.className =
+                        "existing-image";
+
+
+                    wrapper.innerHTML = `
+                        <img
+                            src="${escapeHtml(
+                                reviewImage.image
+                            )}"
+                            alt="Review photo"
+                        >
+
+                        <button
+                            type="button"
+                            class="existing-image__delete"
+                            aria-label="Delete photo"
+                        >
+                            ×
+                        </button>
+                    `;
+
+
+                    const deleteButton =
+                        wrapper.querySelector(
+                            ".existing-image__delete"
+                        );
+
+
+                    deleteButton.addEventListener(
+                        "click",
+                        async () => {
+
+                            const confirmed =
+                                window.confirm(
+                                    "Delete this review photo?"
+                                );
+
+
+                            if (!confirmed) {
+                                return;
+                            }
+
+
+                            deleteButton.disabled =
+                                true;
+
+
+                            const response =
+                                await window
+                                    .TernNestAuth
+                                    .authenticatedFetch(
+                                        (
+                                            "/api/v1/reviews/"
+                                            +
+                                            "images/"
+                                            +
+                                            `${reviewImage.id}/`
+                                        ),
+                                        {
+                                            method:
+                                                "DELETE",
+                                        }
+                                    );
+
+
+                            if (
+                                response.status
+                                !== 204
+                            ) {
+                                let data =
+                                    null;
+
+
+                                try {
+                                    data =
+                                        await response.json();
+                                } catch {
+                                    data =
+                                        null;
+                                }
+
+
+                                showMessage(
+                                    formatErrors(
+                                        data
+                                    )
+                                );
+
+
+                                deleteButton.disabled =
+                                    false;
+
+
+                                return;
+                            }
+
+
+                            currentReview.images =
+                                currentReview.images
+                                    .filter(
+                                        image =>
+                                            image.id
+                                            !==
+                                            reviewImage.id
+                                    );
+
+
+                            renderExistingImages();
+                        }
+                    );
+
+
+                    existingImages.appendChild(
+                        wrapper
+                    );
+                }
+            );
+        }
+
+
+        /* =====================================================
+           AUTHENTICATION
+           ===================================================== */
+
+        if (
+            !window.TernNestAuth
+            ||
+            !window.TernNestAuth
+                .authenticatedFetch
+        ) {
+            return;
+        }
+
+
+        if (
+            !window.TernNestAuth
+                .getAccessToken()
+            &&
+            !window.TernNestAuth
+                .getRefreshToken()
+        ) {
+            window.location.href =
+                (
+                    "/login/?next="
+                    +
+                    encodeURIComponent(
+                        window.location.pathname
+                    )
+                );
+
+
+            return;
+        }
+
+
+        /* =====================================================
+           INITIAL LOAD
+           ===================================================== */
+
+        try {
+
+            /* CURRENT USER */
+
+            const userResponse =
+                await window
+                    .TernNestAuth
+                    .authenticatedFetch(
+                        "/api/v1/accounts/me/"
+                    );
+
+
+            if (!userResponse.ok) {
+
+                window.location.href =
+                    "/login/";
+
+
+                return;
+            }
+
+
+            const currentUser =
+                await userResponse.json();
+
+
+            /* -------------------------------------------------
+               EXACT BOOKING
+
+               Important:
+               we no longer load /bookings/ and search a paginated
+               result. We request this booking directly.
+               ------------------------------------------------- */
+
+            const bookingResponse =
+                await window
+                    .TernNestAuth
+                    .authenticatedFetch(
+                        `/api/v1/bookings/${bookingId}/`
+                    );
+
+
+            if (!bookingResponse.ok) {
+
+                if (
+                    bookingResponse.status
+                    === 404
+                ) {
+                    throw new Error(
+                        "Booking not found."
+                    );
+                }
+
+
+                if (
+                    bookingResponse.status
+                    === 403
+                ) {
+                    throw new Error(
+                        (
+                            "You do not have permission "
+                            +
+                            "to access this booking."
+                        )
+                    );
+                }
+
+
+                throw new Error(
+                    "Could not load booking."
+                );
+            }
+
+
+            currentBooking =
+                await bookingResponse.json();
+
+
+            /* ONLY BOOKING GUEST */
+
+            if (
+                !currentBooking.guest
+                ||
+                currentBooking.guest.id
+                !== currentUser.id
+            ) {
+                throw new Error(
+                    (
+                        "You cannot review "
+                        +
+                        "this booking."
+                    )
+                );
+            }
+
+
+            /* COMPLETED ONLY */
+
+            if (
+                currentBooking.status
+                !== "completed"
+            ) {
+                throw new Error(
+                    (
+                        "Only completed bookings "
+                        +
+                        "can be reviewed."
+                    )
+                );
+            }
+
+
+            /* STAY MUST HAVE ENDED */
+
+            if (
+                new Date(
+                    currentBooking.check_out
+                )
+                >
+                new Date()
+            ) {
+                throw new Error(
+                    (
+                        "The stay has not "
+                        +
+                        "ended yet."
+                    )
+                );
+            }
+
+
+            const listing =
+                currentBooking.listing;
+
+
+            const listingUrl =
+                `/listings/${listing.id}/`;
+
+
+            const reviewsUrl =
+                (
+                    listingUrl
+                    +
+                    "#reviews"
+                );
+
+
+            /* -------------------------------------------------
+               LOAD REVIEWS FOR LISTING
+               ------------------------------------------------- */
+
+            const reviewsResponse =
+                await window
+                    .TernNestAuth
+                    .authenticatedFetch(
+                        (
+                            "/api/v1/reviews/"
+                            +
+                            `?listing=${listing.id}`
+                        )
+                    );
+
+
+            if (!reviewsResponse.ok) {
+                throw new Error(
+                    "Could not load reviews."
+                );
+            }
+
+
+            const reviewsData =
+                await reviewsResponse.json();
+
+
+            const reviews =
+                getResults(
+                    reviewsData
+                );
+
+
+            /* -------------------------------------------------
+               FIND EXISTING REVIEW FOR THIS BOOKING
+               ------------------------------------------------- */
+
+            currentReview =
+                reviews.find(
+                    review =>
+                        Number(
+                            review.booking
+                        )
+                        === bookingId
+                )
+                ||
+                null;
+
+
+            /* -------------------------------------------------
+               PROPERTY INFORMATION
+               ------------------------------------------------- */
+
+            listingTitle.textContent =
+                listing.title;
+
+
+            bookingDates.textContent =
+                (
+                    `${formatDate(
+                        currentBooking.check_in
+                    )}`
+                    +
+                    " → "
+                    +
+                    `${formatDate(
+                        currentBooking.check_out
+                    )}`
+                );
+
+
+            backToListing.href =
+                listingUrl;
+
+
+            reviewListingLink.href =
+                reviewsUrl;
+
+
+            const mainImage =
+                getMainImage(
+                    listing
+                );
+
+
+            if (mainImage) {
+
+                listingImage.src =
+                    mainImage;
+
+
+                listingImage.alt =
+                    listing.title;
+
+
+                listingImage.hidden =
+                    false;
+
+
+                imagePlaceholder.hidden =
+                    true;
+            }
+
+
+            /* -------------------------------------------------
+               EDIT MODE
+               ------------------------------------------------- */
+
+            if (currentReview) {
+
+                pageTitle.textContent =
+                    "Edit your review";
+
+
+                pageDescription.textContent =
+                    (
+                        "Update your rating, comments "
+                        +
+                        "or review photos."
+                    );
+
+
+                submitButton.textContent =
+                    "Save changes";
+
+
+                deleteReviewButton.hidden =
+                    false;
+
+
+                selectedRating =
+                    currentReview.rating
+                    === null
+                        ? null
+                        : Number(
+                            currentReview.rating
+                        );
+
+
+                likedInput.value =
+                    currentReview.liked
+                    ||
+                    "";
+
+
+                dislikedInput.value =
+                    currentReview.disliked
+                    ||
+                    "";
+
+
+                updateStars();
+
+
+                renderExistingImages();
+
+            } else {
+
+                pageTitle.textContent =
+                    "Leave a review";
+
+
+                pageDescription.textContent =
+                    (
+                        "Share your experience "
+                        +
+                        "with other TernNest guests."
+                    );
+
+
+                submitButton.textContent =
+                    "Submit review";
+
+
+                deleteReviewButton.hidden =
+                    true;
+
+
+                updateStars();
+            }
+
+
+            loading.hidden =
+                true;
+
+
+            content.hidden =
+                false;
+
+
+        } catch (error) {
+
+            console.error(
+                "Review page error:",
+                error
+            );
+
+
+            loading.innerHTML = `
+                <h3>
+                    Review unavailable
+                </h3>
+
+                <p>
+                    ${escapeHtml(
+                        error.message
+                        ||
+                        "Could not load booking."
+                    )}
+                </p>
+
+                <a
+                    href="/dashboard/"
+                    class="button button--secondary"
+                >
+                    Back to dashboard
+                </a>
+            `;
+        }
+
+
+        /* =====================================================
+           SUBMIT CREATE / UPDATE
+           ===================================================== */
+
+        form.addEventListener(
+            "submit",
+            async event => {
+
+                event.preventDefault();
+
+
+                hideMessage();
+
+
+                if (!currentBooking) {
+                    return;
+                }
+
+
+                const liked =
+                    likedInput.value.trim();
+
+
+                const disliked =
+                    dislikedInput.value.trim();
+
+
+                if (
+                    !liked
+                    &&
+                    !disliked
+                ) {
+                    showMessage(
+                        (
+                            "Please fill in at least "
+                            +
+                            "one review text field."
+                        )
+                    );
+
+
+                    return;
+                }
+
+
+                const files =
+                    Array.from(
+                        imagesInput.files
+                    );
+
+
+                const existingCount =
+                    currentReview
+                        ? (
+                            currentReview.images
+                            || []
+                        ).length
+                        : 0;
+
+
+                if (
+                    existingCount
+                    +
+                    files.length
+                    >
+                    3
+                ) {
+                    showMessage(
+                        (
+                            "A review can contain "
+                            +
+                            "a maximum of 3 photos."
+                        )
+                    );
+
+
+                    return;
+                }
+
+
+                submitButton.disabled =
+                    true;
+
+
+                submitButton.textContent =
+                    currentReview
+                        ? "Saving..."
+                        : "Publishing...";
+
+
+                try {
+
+                    /* -----------------------------------------
+                       REVIEW PAYLOAD
+                       ----------------------------------------- */
+
+                    const payload = {
+                        liked:
+                            liked,
+
+                        disliked:
+                            disliked,
+
+                        rating:
+                            selectedRating,
+                    };
+
+
+                    let reviewUrl =
+                        "/api/v1/reviews/";
+
+
+                    let reviewMethod =
+                        "POST";
+
+
+                    if (currentReview) {
+
+                        reviewUrl =
+                            (
+                                "/api/v1/reviews/"
+                                +
+                                `${currentReview.id}/`
+                            );
+
+
+                        reviewMethod =
+                            "PATCH";
+
+                    } else {
+
+                        payload.booking =
+                            bookingId;
+                    }
+
+
+                    /* -----------------------------------------
+                       CREATE / UPDATE REVIEW
+                       ----------------------------------------- */
+
+                    const reviewResponse =
+                        await window
+                            .TernNestAuth
+                            .authenticatedFetch(
+                                reviewUrl,
+                                {
+                                    method:
+                                        reviewMethod,
+
+                                    headers: {
+                                        "Content-Type":
+                                            "application/json",
+                                    },
+
+                                    body:
+                                        JSON.stringify(
+                                            payload
+                                        ),
+                                }
+                            );
+
+
+                    let reviewData =
+                        null;
+
+
+                    try {
+                        reviewData =
+                            await reviewResponse
+                                .json();
+                    } catch {
+                        reviewData =
+                            null;
+                    }
+
+
+                    if (
+                        !reviewResponse.ok
+                    ) {
+                        showMessage(
+                            formatErrors(
+                                reviewData
+                            )
+                        );
+
+
+                        submitButton.disabled =
+                            false;
+
+
+                        submitButton.textContent =
+                            currentReview
+                                ? "Save changes"
+                                : "Submit review";
+
+
+                        return;
+                    }
+
+
+                    const reviewId =
+                        currentReview
+                            ? currentReview.id
+                            : reviewData.id;
+
+
+                    /* -----------------------------------------
+                       UPLOAD NEW PHOTOS
+                       ----------------------------------------- */
+
+                    let failedImages =
+                        0;
+
+
+                    for (
+                        const file
+                        of files
+                    ) {
+
+                        const imageData =
+                            new FormData();
+
+
+                        imageData.append(
+                            "review",
+                            reviewId
+                        );
+
+
+                        imageData.append(
+                            "image",
+                            file
+                        );
+
+
+                        const imageResponse =
+                            await window
+                                .TernNestAuth
+                                .authenticatedFetch(
+                                    "/api/v1/reviews/images/",
+                                    {
+                                        method:
+                                            "POST",
+
+                                        body:
+                                            imageData,
+                                    }
+                                );
+
+
+                        if (
+                            !imageResponse.ok
+                        ) {
+                            failedImages +=
+                                1;
+                        }
+                    }
+
+
+                    /* -----------------------------------------
+                       SUCCESS
+                       ----------------------------------------- */
+
+                    content.hidden =
+                        true;
+
+
+                    success.hidden =
+                        false;
+
+
+                    if (currentReview) {
+
+                        successTitle.textContent =
+                            "Review updated";
+
+
+                        successText.textContent =
+                            failedImages > 0
+                                ? (
+                                    "Your review was updated, "
+                                    +
+                                    "but some photos could not "
+                                    +
+                                    "be uploaded."
+                                )
+                                : (
+                                    "Your review has been "
+                                    +
+                                    "updated successfully."
+                                );
+
+                    } else {
+
+                        successTitle.textContent =
+                            "Thank you for your review!";
+
+
+                        successText.textContent =
+                            failedImages > 0
+                                ? (
+                                    "Your review was published, "
+                                    +
+                                    "but some photos could not "
+                                    +
+                                    "be uploaded."
+                                )
+                                : (
+                                    "Your review has been "
+                                    +
+                                    "published successfully."
+                                );
+                    }
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Review save error:",
+                        error
+                    );
+
+
+                    showMessage(
+                        (
+                            "Could not save review. "
+                            +
+                            "Please try again."
+                        )
+                    );
+
+
+                    submitButton.disabled =
+                        false;
+
+
+                    submitButton.textContent =
+                        currentReview
+                            ? "Save changes"
+                            : "Submit review";
+                }
+            }
+        );
+
+
+        /* =====================================================
+           DELETE REVIEW
+           ===================================================== */
+
+        deleteReviewButton.addEventListener(
+            "click",
+            async () => {
+
+                if (!currentReview) {
+                    return;
+                }
+
+
+                const confirmed =
+                    window.confirm(
+                        (
+                            "Delete this review permanently?"
+                            +
+                            "\n\n"
+                            +
+                            "This cannot be undone."
+                        )
+                    );
+
+
+                if (!confirmed) {
+                    return;
+                }
+
+
+                deleteReviewButton.disabled =
+                    true;
+
+
+                deleteReviewButton.textContent =
+                    "Deleting...";
+
+
+                try {
+
+                    const response =
+                        await window
+                            .TernNestAuth
+                            .authenticatedFetch(
+                                (
+                                    "/api/v1/reviews/"
+                                    +
+                                    `${currentReview.id}/`
+                                ),
+                                {
+                                    method:
+                                        "DELETE",
+                                }
+                            );
+
+
+                    if (
+                        response.status
+                        === 204
+                    ) {
+                        content.hidden =
+                            true;
+
+
+                        success.hidden =
+                            false;
+
+
+                        successTitle.textContent =
+                            "Review deleted";
+
+
+                        successText.textContent =
+                            (
+                                "Your review has been "
+                                +
+                                "removed successfully."
+                            );
+
+
+                        return;
+                    }
+
+
+                    let data =
+                        null;
+
+
+                    try {
+                        data =
+                            await response.json();
+                    } catch {
+                        data =
+                            null;
+                    }
+
+
+                    showMessage(
+                        formatErrors(
+                            data
+                        )
+                    );
+
+
+                    deleteReviewButton.disabled =
+                        false;
+
+
+                    deleteReviewButton.textContent =
+                        "Delete review";
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Review delete error:",
+                        error
+                    );
+
+
+                    showMessage(
+                        (
+                            "Could not delete review. "
+                            +
+                            "Please try again."
+                        )
+                    );
+
+
+                    deleteReviewButton.disabled =
+                        false;
+
+
+                    deleteReviewButton.textContent =
+                        "Delete review";
+                }
+            }
+        );
+
+    }
+);
+
+</script>
+
+{% endblock %}

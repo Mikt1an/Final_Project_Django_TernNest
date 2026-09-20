@@ -1,0 +1,767 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}Availability | TernNest{% endblock %}
+
+{% block content %}
+
+<section class="page-heading">
+    <div class="container">
+        <span class="eyebrow">Hosting</span>
+
+        <h1 id="availability-title">
+            Availability
+        </h1>
+
+        <p>
+            Review reservations and block dates
+            when your property is unavailable.
+        </p>
+    </div>
+</section>
+
+
+<section class="content-section content-section--compact">
+    <div class="container availability-layout">
+
+        <div>
+
+            <section class="availability-section">
+                <div class="section-heading">
+                    <div>
+                        <span class="eyebrow">
+                            Guests
+                        </span>
+
+                        <h2>
+                            Reserved dates
+                        </h2>
+                    </div>
+                </div>
+
+                <div
+                    id="reservation-list"
+                    class="availability-list"
+                >
+                    Loading reservations...
+                </div>
+            </section>
+
+
+            <section class="availability-section">
+                <div class="section-heading">
+                    <div>
+                        <span class="eyebrow">
+                            Owner
+                        </span>
+
+                        <h2>
+                            Blocked dates
+                        </h2>
+                    </div>
+                </div>
+
+                <div
+                    id="blocked-period-list"
+                    class="availability-list"
+                >
+                    Loading blocked dates...
+                </div>
+            </section>
+
+        </div>
+
+
+        <aside class="listing-detail__booking">
+
+            <h2>Block dates</h2>
+
+            <p>
+                Use this for maintenance,
+                renovation, vacation or
+                personal use.
+            </p>
+
+
+            <form
+                id="blocked-period-form"
+                class="form-stack"
+            >
+
+                <label class="form-field">
+                    <span>Start date</span>
+
+                    <input
+                        type="date"
+                        id="block-start-date"
+                        required
+                    >
+                </label>
+
+
+                <label class="form-field">
+                    <span>Start time</span>
+
+                    <input
+                        type="time"
+                        id="block-start-time"
+                        value="11:00"
+                        required
+                    >
+                </label>
+
+
+                <label class="form-field">
+                    <span>End date</span>
+
+                    <input
+                        type="date"
+                        id="block-end-date"
+                        required
+                    >
+                </label>
+
+
+                <label class="form-field">
+                    <span>End time</span>
+
+                    <input
+                        type="time"
+                        id="block-end-time"
+                        value="15:00"
+                        required
+                    >
+                </label>
+
+
+                <label class="form-field">
+                    <span>Reason</span>
+
+                    <select
+                        id="block-reason"
+                        required
+                    >
+                        <option value="maintenance">
+                            Maintenance
+                        </option>
+
+                        <option value="renovation">
+                            Renovation
+                        </option>
+
+                        <option value="owner_stay">
+                            Owner stay
+                        </option>
+
+                        <option value="vacation">
+                            Vacation
+                        </option>
+
+                        <option value="other">
+                            Other
+                        </option>
+                    </select>
+                </label>
+
+
+                <label class="form-field">
+                    <span>Note</span>
+
+                    <input
+                        type="text"
+                        id="block-note"
+                        placeholder="Optional note"
+                    >
+                </label>
+
+
+                <div
+                    id="availability-message"
+                    class="form-message"
+                    hidden
+                ></div>
+
+
+                <button
+                    type="submit"
+                    class="button button--primary button--full"
+                >
+                    Block dates
+                </button>
+
+            </form>
+
+        </aside>
+
+    </div>
+</section>
+
+
+<style>
+    .availability-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 36px;
+        align-items: start;
+    }
+
+    .availability-section + .availability-section {
+        margin-top: 55px;
+    }
+
+    .availability-list {
+        display: grid;
+        gap: 14px;
+    }
+
+    .availability-card {
+        padding: 18px 20px;
+
+        background: var(--color-surface);
+
+        border: 1px solid var(--color-border);
+        border-radius: 14px;
+    }
+
+    .availability-card__top {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+    .availability-card h3 {
+        margin: 0 0 8px;
+        font-size: 17px;
+    }
+
+    .availability-card p {
+        margin: 4px 0;
+    }
+
+    .availability-card__dates {
+        font-weight: 800;
+    }
+
+    .availability-card__status {
+        text-transform: capitalize;
+        color: var(--color-text-soft);
+    }
+
+    .availability-card__delete {
+        margin-top: 12px;
+    }
+
+    @media (max-width: 850px) {
+        .availability-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    const listingId = {{ listing_id }};
+
+    const reservationList =
+        document.getElementById(
+            "reservation-list"
+        );
+
+    const blockedList =
+        document.getElementById(
+            "blocked-period-list"
+        );
+
+    const form =
+        document.getElementById(
+            "blocked-period-form"
+        );
+
+    const message =
+        document.getElementById(
+            "availability-message"
+        );
+
+    let listing = null;
+
+
+    function getResults(data) {
+        if (Array.isArray(data)) {
+            return data;
+        }
+
+        return data.results || [];
+    }
+
+
+    function formatDate(value) {
+        const date =
+            new Date(value);
+
+        return new Intl.DateTimeFormat(
+            "en-GB",
+            {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+            }
+        ).format(date);
+    }
+
+
+    function guestName(guest) {
+        if (!guest) {
+            return "Guest";
+        }
+
+        return [
+            guest.first_name,
+            guest.last_name,
+        ]
+            .filter(Boolean)
+            .join(" ")
+            || "Guest";
+    }
+
+
+    function formatErrors(data) {
+        if (!data) {
+            return "Something went wrong.";
+        }
+
+        if (data.detail) {
+            return data.detail;
+        }
+
+        const result = [];
+
+        Object.values(data).forEach(value => {
+            const values =
+                Array.isArray(value)
+                    ? value
+                    : [value];
+
+            values.forEach(error => {
+                if (typeof error === "string") {
+                    result.push(error);
+                }
+            });
+        });
+
+        return result.join(" ") || "Something went wrong.";
+    }
+
+
+    function showMessage(text, type) {
+        message.hidden = false;
+        message.textContent = text;
+        message.className =
+            `form-message form-message--${type}`;
+    }
+
+
+    if (
+        !window.TernNestAuth ||
+        !window.TernNestAuth.authenticatedFetch
+    ) {
+        return;
+    }
+
+
+    async function loadEverything() {
+        const [
+            userResponse,
+            listingResponse,
+            bookingsResponse,
+            blocksResponse,
+        ] = await Promise.all([
+            window.TernNestAuth.authenticatedFetch(
+                "/api/v1/accounts/me/"
+            ),
+
+            window.TernNestAuth.authenticatedFetch(
+                `/api/v1/listings/${listingId}/`
+            ),
+
+            window.TernNestAuth.authenticatedFetch(
+                "/api/v1/bookings/"
+            ),
+
+            window.TernNestAuth.authenticatedFetch(
+                "/api/v1/bookings/blocked-periods/"
+            ),
+        ]);
+
+
+        if (
+            !userResponse.ok ||
+            !listingResponse.ok
+        ) {
+            window.location.href =
+                "/dashboard/";
+
+            return;
+        }
+
+
+        const user =
+            await userResponse.json();
+
+        listing =
+            await listingResponse.json();
+
+
+        if (
+            !listing.owner ||
+            listing.owner.id !== user.id
+        ) {
+            window.location.href =
+                "/dashboard/";
+
+            return;
+        }
+
+
+        document.getElementById(
+            "availability-title"
+        ).textContent =
+            `Availability — ${listing.title}`;
+
+
+        if (bookingsResponse.ok) {
+            const data =
+                await bookingsResponse.json();
+
+            renderBookings(
+                getResults(data)
+            );
+        }
+
+
+        if (blocksResponse.ok) {
+            const data =
+                await blocksResponse.json();
+
+            renderBlocks(
+                getResults(data)
+            );
+        }
+    }
+
+
+    function renderBookings(bookings) {
+        const reservations =
+            bookings
+                .filter(booking => {
+                    return (
+                        booking.listing &&
+                        booking.listing.id === listingId &&
+                        booking.status !== "cancelled"
+                    );
+                })
+                .sort(
+                    (a, b) =>
+                        new Date(a.check_in)
+                        -
+                        new Date(b.check_in)
+                );
+
+
+        reservationList.innerHTML = "";
+
+
+        if (reservations.length === 0) {
+            reservationList.innerHTML = `
+                <div class="empty-state">
+                    <h3>No reservations</h3>
+
+                    <p>
+                        This property currently
+                        has no reserved dates.
+                    </p>
+                </div>
+            `;
+
+            return;
+        }
+
+
+        reservations.forEach(booking => {
+            const card =
+                document.createElement("article");
+
+            card.className =
+                "availability-card";
+
+
+            card.innerHTML = `
+                <div class="availability-card__top">
+                    <div>
+                        <h3>
+                            ${guestName(
+                                booking.guest
+                            )}
+                        </h3>
+
+                        <p class="availability-card__dates">
+                            ${formatDate(
+                                booking.check_in
+                            )}
+                            →
+                            ${formatDate(
+                                booking.check_out
+                            )}
+                        </p>
+
+                        <p>
+                            ${booking.guests}
+                            guests ·
+                            ${booking.book_days}
+                            nights
+                        </p>
+                    </div>
+
+                    <span class="availability-card__status">
+                        ${booking.status}
+                    </span>
+                </div>
+            `;
+
+
+            reservationList.appendChild(
+                card
+            );
+        });
+    }
+
+
+    function renderBlocks(periods) {
+        const listingPeriods =
+            periods
+                .filter(period => {
+                    const periodListing =
+                        typeof period.listing === "object"
+                            ? period.listing.id
+                            : period.listing;
+
+                    return (
+                        periodListing === listingId
+                    );
+                })
+                .sort(
+                    (a, b) =>
+                        new Date(a.start_at)
+                        -
+                        new Date(b.start_at)
+                );
+
+
+        blockedList.innerHTML = "";
+
+
+        if (listingPeriods.length === 0) {
+            blockedList.innerHTML = `
+                <div class="empty-state">
+                    <h3>No blocked dates</h3>
+
+                    <p>
+                        You have not blocked
+                        any dates manually.
+                    </p>
+                </div>
+            `;
+
+            return;
+        }
+
+
+        listingPeriods.forEach(period => {
+            const card =
+                document.createElement("article");
+
+            card.className =
+                "availability-card";
+
+
+            card.innerHTML = `
+                <h3>
+                    ${period.reason
+                        .replaceAll("_", " ")
+                    }
+                </h3>
+
+                <p class="availability-card__dates">
+                    ${formatDate(
+                        period.start_at
+                    )}
+                    →
+                    ${formatDate(
+                        period.end_at
+                    )}
+                </p>
+
+                ${
+                    period.note
+                        ? `
+                            <p>
+                                ${period.note}
+                            </p>
+                        `
+                        : ""
+                }
+
+                <button
+                    type="button"
+                    class="button button--secondary availability-card__delete"
+                >
+                    Remove block
+                </button>
+            `;
+
+
+            card
+                .querySelector(
+                    ".availability-card__delete"
+                )
+                .addEventListener(
+                    "click",
+                    async () => {
+                        const response =
+                            await window.TernNestAuth.authenticatedFetch(
+                                `/api/v1/bookings/blocked-periods/${period.id}/`,
+                                {
+                                    method: "DELETE",
+                                }
+                            );
+
+
+                        if (response.ok) {
+                            await loadEverything();
+                        }
+                    }
+                );
+
+
+            blockedList.appendChild(
+                card
+            );
+        });
+    }
+
+
+    form.addEventListener(
+        "submit",
+        async event => {
+            event.preventDefault();
+
+            message.hidden = true;
+
+
+            const startDate =
+                document.getElementById(
+                    "block-start-date"
+                ).value;
+
+            const startTime =
+                document.getElementById(
+                    "block-start-time"
+                ).value;
+
+            const endDate =
+                document.getElementById(
+                    "block-end-date"
+                ).value;
+
+            const endTime =
+                document.getElementById(
+                    "block-end-time"
+                ).value;
+
+            const reason =
+                document.getElementById(
+                    "block-reason"
+                ).value;
+
+            const note =
+                document.getElementById(
+                    "block-note"
+                ).value.trim();
+
+
+            const response =
+                await window.TernNestAuth.authenticatedFetch(
+                    "/api/v1/bookings/blocked-periods/",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json",
+                        },
+
+                        body: JSON.stringify({
+                            listing:
+                                listingId,
+
+                            start_at:
+                                `${startDate}T${startTime}:00`,
+
+                            end_at:
+                                `${endDate}T${endTime}:00`,
+
+                            reason,
+                            note,
+                        }),
+                    }
+                );
+
+
+            let data = null;
+
+            try {
+                data =
+                    await response.json();
+            } catch {
+                data = null;
+            }
+
+
+            if (!response.ok) {
+                showMessage(
+                    formatErrors(data),
+                    "error"
+                );
+
+                return;
+            }
+
+
+            showMessage(
+                "Dates blocked successfully.",
+                "success"
+            );
+
+
+            form.reset();
+
+            document.getElementById(
+                "block-start-time"
+            ).value = "11:00";
+
+            document.getElementById(
+                "block-end-time"
+            ).value = "15:00";
+
+
+            await loadEverything();
+        }
+    );
+
+
+    await loadEverything();
+});
+</script>
+
+{% endblock %}

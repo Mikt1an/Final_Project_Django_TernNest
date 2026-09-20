@@ -1,0 +1,2844 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}Dashboard | TernNest{% endblock %}
+
+{% block content %}
+
+<section class="page-heading">
+    <div class="container">
+        <span class="eyebrow">Your account</span>
+
+        <h1>Dashboard</h1>
+
+        <p>
+            Manage your profile, listings and bookings.
+        </p>
+
+        <div style="margin-top: 22px;">
+            <a
+                href="{% url 'frontend:account-settings' %}"
+                class="button button--secondary"
+            >
+                Edit profile
+            </a>
+        </div>
+    </div>
+</section>
+
+
+<section class="content-section content-section--compact">
+    <div class="container">
+
+        <!-- =====================================================
+             SUMMARY
+             ===================================================== -->
+
+        <div class="dashboard-grid">
+
+            <article class="dashboard-card">
+                <span
+                    id="my-listings-count"
+                    class="dashboard-card__number"
+                >
+                    0
+                </span>
+
+                <h2>My listings</h2>
+
+                <p>
+                    Properties you manage on TernNest.
+                </p>
+
+                <a href="{% url 'frontend:listing-create' %}">
+                    Add a listing →
+                </a>
+            </article>
+
+
+            <article class="dashboard-card">
+                <span
+                    id="my-bookings-count"
+                    class="dashboard-card__number"
+                >
+                    0
+                </span>
+
+                <h2>My bookings</h2>
+
+                <p>
+                    Your active reservations.
+                </p>
+            </article>
+
+
+            <article class="dashboard-card">
+                <span
+                    id="guest-bookings-count"
+                    class="dashboard-card__number"
+                >
+                    0
+                </span>
+
+                <h2>Guest bookings</h2>
+
+                <p>
+                    Active bookings for your properties.
+                </p>
+            </article>
+
+
+            <article class="dashboard-card">
+                <span
+                    id="favorites-count"
+                    class="dashboard-card__number"
+                >
+                    0
+                </span>
+
+                <h2>Favorites</h2>
+
+                <p>
+                    Homes you saved for later.
+                </p>
+
+                <a href="{% url 'frontend:favorites' %}">
+                    View favorites →
+                </a>
+            </article>
+
+        </div>
+
+
+        <!-- =====================================================
+             MY LISTINGS
+             ===================================================== -->
+
+        <section class="dashboard-section">
+
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">
+                        Hosting
+                    </span>
+
+                    <h2>
+                        My listings
+                    </h2>
+                </div>
+
+                <a
+                    href="{% url 'frontend:listing-create' %}"
+                    class="button button--secondary"
+                >
+                    Add a listing
+                </a>
+            </div>
+
+
+            <div
+                id="my-listings-list"
+                class="owner-listings"
+            >
+                <div class="empty-state">
+                    <p>
+                        Loading your listings...
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             MY ACTIVE BOOKINGS
+             ===================================================== -->
+
+        <section class="dashboard-section">
+
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">
+                        Your trips
+                    </span>
+
+                    <h2>
+                        My bookings
+                    </h2>
+                </div>
+
+                <p>
+                    Pending and confirmed stays.
+                </p>
+            </div>
+
+
+            <div
+                id="my-bookings-list"
+                class="dashboard-bookings-list"
+            >
+                <div class="empty-state">
+                    <p>
+                        Loading bookings...
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             MY BOOKING HISTORY
+             ===================================================== -->
+
+        <section class="dashboard-section dashboard-history-section">
+
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">
+                        History
+                    </span>
+
+                    <h2>
+                        My booking history
+
+                        <span
+                            id="my-history-count"
+                            class="history-count"
+                        >
+                            0
+                        </span>
+                    </h2>
+                </div>
+
+                <p>
+                    Completed and cancelled stays.
+                </p>
+            </div>
+
+
+            <div
+                id="my-booking-history"
+                class="dashboard-bookings-list"
+            >
+                <div class="empty-state">
+                    <p>
+                        Loading history...
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             ACTIVE GUEST BOOKINGS
+             ===================================================== -->
+
+        <section class="dashboard-section">
+
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">
+                        Hosting
+                    </span>
+
+                    <h2>
+                        Guest bookings
+                    </h2>
+                </div>
+
+                <p>
+                    Current reservations for your properties.
+                </p>
+            </div>
+
+
+            <div
+                id="guest-bookings-list"
+                class="dashboard-bookings-list"
+            >
+                <div class="empty-state">
+                    <p>
+                        Loading bookings...
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             GUEST BOOKING HISTORY
+             ===================================================== -->
+
+        <section class="dashboard-section dashboard-history-section">
+
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">
+                        Hosting history
+                    </span>
+
+                    <h2>
+                        Guest booking history
+
+                        <span
+                            id="guest-history-count"
+                            class="history-count"
+                        >
+                            0
+                        </span>
+                    </h2>
+                </div>
+
+                <p>
+                    Completed and cancelled guest reservations.
+                </p>
+            </div>
+
+
+            <div
+                id="guest-booking-history"
+                class="dashboard-bookings-list"
+            >
+                <div class="empty-state">
+                    <p>
+                        Loading history...
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+    </div>
+</section>
+
+
+<style>
+
+.dashboard-section {
+    margin-top: 60px;
+}
+
+
+.dashboard-history-section {
+    padding-top: 34px;
+
+    border-top:
+        1px solid
+        var(--color-border);
+}
+
+
+.history-count {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-width: 28px;
+    height: 28px;
+
+    margin-left: 8px;
+    padding: 0 8px;
+
+    color:
+        var(--color-primary-dark);
+
+    background: #edf3f0;
+
+    border-radius: 999px;
+
+    font-size: 13px;
+
+    vertical-align: middle;
+}
+
+
+/* =============================================================
+   OWNER LISTINGS
+   ============================================================= */
+
+.owner-listings {
+    display: grid;
+
+    gap: 18px;
+}
+
+
+.owner-listing-card {
+    display: grid;
+
+    grid-template-columns:
+        170px
+        minmax(0, 1fr)
+        auto;
+
+    gap: 22px;
+
+    align-items: center;
+
+    padding: 18px;
+
+    background:
+        var(--color-surface);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius:
+        var(--border-radius);
+
+    box-shadow:
+        0 8px 25px
+        rgba(31, 64, 55, 0.08);
+}
+
+
+.owner-listing-card__image {
+    width: 170px;
+    height: 125px;
+
+    display: block;
+
+    object-fit: cover;
+
+    border-radius: 12px;
+
+    background: #e9eeeb;
+}
+
+
+.owner-listing-card__placeholder {
+    width: 170px;
+    height: 125px;
+
+    display: grid;
+
+    place-items: center;
+
+    padding: 12px;
+
+    color:
+        var(--color-text-soft);
+
+    background: #edf2ef;
+
+    border-radius: 12px;
+
+    text-align: center;
+}
+
+
+.owner-listing-card__content {
+    min-width: 0;
+}
+
+
+.owner-listing-card__content h3 {
+    margin: 0 0 7px;
+
+    font-size: 20px;
+}
+
+
+.owner-listing-card__location {
+    margin: 0 0 8px;
+
+    color:
+        var(--color-text-soft);
+
+    font-size: 14px;
+}
+
+
+.owner-listing-card__details {
+    margin: 5px 0;
+
+    color:
+        var(--color-text-soft);
+
+    font-size: 14px;
+}
+
+
+.owner-listing-card__price {
+    margin: 8px 0 0;
+
+    color:
+        var(--color-primary-dark);
+
+    font-size: 17px;
+
+    font-weight: 800;
+}
+
+
+.owner-listing-card__side {
+    min-width: 250px;
+
+    text-align: right;
+}
+
+
+.owner-listing-status {
+    display: inline-block;
+
+    margin-bottom: 14px;
+
+    padding: 6px 11px;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+
+    font-weight: 800;
+}
+
+
+.owner-listing-status--published {
+    color: #176048;
+
+    background: #e6f6ef;
+}
+
+
+.owner-listing-status--draft {
+    color: #846117;
+
+    background: #fff7d9;
+}
+
+
+.owner-listing-actions {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    justify-content: flex-end;
+
+    gap: 8px;
+}
+
+
+.owner-listing-actions .button {
+    padding: 8px 12px;
+
+    font-size: 13px;
+}
+
+
+.owner-listing-message {
+    margin: 10px 0 0;
+
+    font-size: 13px;
+}
+
+
+.owner-listing-message--error {
+    color: #922f26;
+}
+
+
+.owner-listing-message--success {
+    color: #176048;
+}
+
+
+/* =============================================================
+   BOOKINGS
+   ============================================================= */
+
+.dashboard-bookings-list {
+    display: grid;
+
+    gap: 18px;
+}
+
+
+.booking-card {
+    display: grid;
+
+    grid-template-columns:
+        150px
+        minmax(0, 1fr)
+        auto;
+
+    gap: 22px;
+
+    align-items: center;
+
+    padding: 18px;
+
+    background:
+        var(--color-surface);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius:
+        var(--border-radius);
+
+    box-shadow:
+        0 8px 25px
+        rgba(31, 64, 55, 0.08);
+}
+
+
+.booking-card--history {
+    opacity: 0.92;
+
+    background: #fbfcfb;
+}
+
+
+.booking-card__image {
+    width: 150px;
+    height: 110px;
+
+    object-fit: cover;
+
+    background: #e9eeeb;
+
+    border-radius: 12px;
+}
+
+
+.booking-card__image-placeholder {
+    width: 150px;
+    height: 110px;
+
+    display: grid;
+
+    place-items: center;
+
+    color:
+        var(--color-text-soft);
+
+    background: #edf2ef;
+
+    border-radius: 12px;
+}
+
+
+.booking-card__content {
+    min-width: 0;
+}
+
+
+.booking-card__content h3 {
+    margin: 0 0 7px;
+
+    font-size: 19px;
+}
+
+
+.booking-card__content h3 a {
+    color: inherit;
+
+    text-decoration: none;
+}
+
+
+.booking-card__content h3 a:hover {
+    color:
+        var(--color-primary);
+}
+
+
+.booking-card__location {
+    margin: 0 0 10px;
+
+    color:
+        var(--color-text-soft);
+
+    font-size: 14px;
+}
+
+
+.booking-card__details {
+    margin: 5px 0;
+
+    font-size: 14px;
+
+    line-height: 1.55;
+}
+
+
+.booking-card__guest {
+    margin: 9px 0 0;
+
+    color:
+        var(--color-text-soft);
+
+    font-size: 14px;
+}
+
+
+.booking-card__side {
+    min-width: 180px;
+
+    text-align: right;
+}
+
+
+.booking-card__price {
+    display: block;
+
+    margin-bottom: 10px;
+
+    color:
+        var(--color-primary-dark);
+
+    font-size: 19px;
+
+    font-weight: 800;
+}
+
+
+.booking-status {
+    display: inline-block;
+
+    padding: 6px 10px;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+
+    font-weight: 750;
+
+    text-transform: capitalize;
+}
+
+
+.booking-status--pending {
+    color: #846117;
+
+    background: #fff7d9;
+}
+
+
+.booking-status--confirmed {
+    color: #176048;
+
+    background: #e6f6ef;
+}
+
+
+.booking-status--cancelled {
+    color: #922f26;
+
+    background: #fff0ed;
+}
+
+
+.booking-status--completed {
+    color: #415a70;
+
+    background: #edf2f6;
+}
+
+
+.booking-card__actions {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    justify-content: flex-end;
+
+    gap: 7px;
+
+    margin-top: 14px;
+}
+
+
+.booking-card__actions .button {
+    padding: 8px 11px;
+
+    font-size: 12px;
+}
+
+
+.booking-card__message {
+    margin: 9px 0 0;
+
+    max-width: 230px;
+
+    font-size: 12px;
+
+    line-height: 1.4;
+}
+
+
+.booking-card__message--error {
+    color: #922f26;
+}
+
+
+.review-action {
+    font-weight: 700;
+}
+
+
+.button--danger {
+    color: #fff;
+
+    background: #a23b32;
+
+    border-color: #a23b32;
+}
+
+
+/* =============================================================
+   RESPONSIVE
+   ============================================================= */
+
+@media (max-width: 900px) {
+
+    .owner-listing-card {
+        grid-template-columns:
+            140px
+            minmax(0, 1fr);
+    }
+
+
+    .owner-listing-card__image,
+    .owner-listing-card__placeholder {
+        width: 140px;
+        height: 105px;
+    }
+
+
+    .owner-listing-card__side {
+        grid-column: 1 / -1;
+
+        min-width: 0;
+
+        text-align: left;
+    }
+
+
+    .owner-listing-actions {
+        justify-content: flex-start;
+    }
+
+}
+
+
+@media (max-width: 750px) {
+
+    .booking-card {
+        grid-template-columns:
+            100px
+            1fr;
+    }
+
+
+    .booking-card__image,
+    .booking-card__image-placeholder {
+        width: 100px;
+        height: 90px;
+    }
+
+
+    .booking-card__side {
+        grid-column: 1 / -1;
+
+        min-width: 0;
+
+        text-align: left;
+    }
+
+
+    .booking-card__actions {
+        justify-content: flex-start;
+    }
+
+}
+
+
+@media (max-width: 520px) {
+
+    .owner-listing-card,
+    .booking-card {
+        grid-template-columns: 1fr;
+    }
+
+
+    .owner-listing-card__image,
+    .owner-listing-card__placeholder,
+    .booking-card__image,
+    .booking-card__image-placeholder {
+        width: 100%;
+
+        height: 190px;
+    }
+
+
+    .owner-listing-card__side,
+    .booking-card__side {
+        grid-column: 1;
+    }
+
+}
+
+</style>
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    async () => {
+
+        /* =====================================================
+           ELEMENTS
+           ===================================================== */
+
+        const myListingsCount =
+            document.getElementById(
+                "my-listings-count"
+            );
+
+        const myBookingsCount =
+            document.getElementById(
+                "my-bookings-count"
+            );
+
+        const guestBookingsCount =
+            document.getElementById(
+                "guest-bookings-count"
+            );
+
+        const favoritesCount =
+            document.getElementById(
+                "favorites-count"
+            );
+
+        const myHistoryCount =
+            document.getElementById(
+                "my-history-count"
+            );
+
+        const guestHistoryCount =
+            document.getElementById(
+                "guest-history-count"
+            );
+
+        const myListingsList =
+            document.getElementById(
+                "my-listings-list"
+            );
+
+        const myBookingsList =
+            document.getElementById(
+                "my-bookings-list"
+            );
+
+        const myBookingHistory =
+            document.getElementById(
+                "my-booking-history"
+            );
+
+        const guestBookingsList =
+            document.getElementById(
+                "guest-bookings-list"
+            );
+
+        const guestBookingHistory =
+            document.getElementById(
+                "guest-booking-history"
+            );
+
+
+        /* =====================================================
+           HELPERS
+           ===================================================== */
+
+        function getResults(data) {
+
+            if (Array.isArray(data)) {
+                return data;
+            }
+
+            return data.results || [];
+        }
+
+
+        function escapeHtml(value) {
+
+            if (
+                value === null ||
+                value === undefined
+            ) {
+                return "";
+            }
+
+            const element =
+                document.createElement(
+                    "div"
+                );
+
+            element.textContent =
+                String(value);
+
+            return element.innerHTML;
+        }
+
+
+        function formatDate(value) {
+
+            if (!value) {
+                return "";
+            }
+
+            const date =
+                new Date(value);
+
+            return new Intl.DateTimeFormat(
+                "en-GB",
+                {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                }
+            ).format(date);
+        }
+
+
+        function getMainImage(listing) {
+
+            if (
+                !listing.images ||
+                listing.images.length === 0
+            ) {
+                return "";
+            }
+
+            const mainImage =
+                listing.images.find(
+                    image => image.is_main
+                )
+                ||
+                listing.images[0];
+
+            return mainImage.image;
+        }
+
+
+        function guestName(guest) {
+
+            if (!guest) {
+                return "Guest";
+            }
+
+            return [
+                guest.first_name,
+                guest.last_name,
+            ]
+                .filter(Boolean)
+                .join(" ")
+                ||
+                "Guest";
+        }
+
+
+        function formatErrors(data) {
+
+            if (!data) {
+                return "Something went wrong.";
+            }
+
+            if (data.detail) {
+                return data.detail;
+            }
+
+            const result = [];
+
+
+            function collect(value) {
+
+                if (
+                    typeof value ===
+                    "string"
+                ) {
+                    result.push(value);
+
+                    return;
+                }
+
+                if (
+                    Array.isArray(value)
+                ) {
+                    value.forEach(
+                        collect
+                    );
+
+                    return;
+                }
+
+                if (
+                    value &&
+                    typeof value === "object"
+                ) {
+                    Object.values(value)
+                        .forEach(
+                            collect
+                        );
+                }
+            }
+
+
+            collect(data);
+
+
+            return (
+                result.join(" ")
+                ||
+                "Something went wrong."
+            );
+        }
+
+
+        function showEmptyState(
+            container,
+            title,
+            text
+        ) {
+
+            container.innerHTML = `
+                <div
+                    class="
+                        empty-state
+                        empty-state--wide
+                    "
+                >
+                    <div class="empty-state__icon">
+                        ⌂
+                    </div>
+
+                    <h3>
+                        ${escapeHtml(title)}
+                    </h3>
+
+                    <p>
+                        ${escapeHtml(text)}
+                    </p>
+                </div>
+            `;
+        }
+
+
+        function isActiveBooking(
+            booking
+        ) {
+
+            return (
+                booking.status === "pending"
+                ||
+                booking.status === "confirmed"
+            );
+        }
+
+
+        function isHistoryBooking(
+            booking
+        ) {
+
+            return (
+                booking.status === "completed"
+                ||
+                booking.status === "cancelled"
+            );
+        }
+
+
+        /*
+         * Loads every DRF pagination page.
+         *
+         * This is important because after seed_demo
+         * there can be more bookings/listings/reviews
+         * than fit on the first page.
+         */
+
+        async function fetchAllPages(
+            firstUrl
+        ) {
+
+            let nextUrl =
+                firstUrl;
+
+            const allResults =
+                [];
+
+
+            while (nextUrl) {
+
+                /*
+                 * DRF can return an absolute URL
+                 * in "next".
+                 *
+                 * authenticatedFetch works more
+                 * reliably with our local path.
+                 */
+
+                let requestUrl =
+                    nextUrl;
+
+
+                try {
+
+                    const parsed =
+                        new URL(
+                            nextUrl,
+                            window.location.origin
+                        );
+
+
+                    if (
+                        parsed.origin ===
+                        window.location.origin
+                    ) {
+                        requestUrl =
+                            (
+                                parsed.pathname
+                                +
+                                parsed.search
+                            );
+                    }
+
+                } catch {
+                    requestUrl =
+                        nextUrl;
+                }
+
+
+                const response =
+                    await window.TernNestAuth
+                        .authenticatedFetch(
+                            requestUrl
+                        );
+
+
+                if (!response.ok) {
+
+                    let errorData =
+                        null;
+
+
+                    try {
+                        errorData =
+                            await response.json();
+                    } catch {
+                        errorData =
+                            null;
+                    }
+
+
+                    throw new Error(
+                        formatErrors(
+                            errorData
+                        )
+                    );
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                if (Array.isArray(data)) {
+
+                    allResults.push(
+                        ...data
+                    );
+
+                    break;
+                }
+
+
+                allResults.push(
+                    ...(
+                        data.results
+                        ||
+                        []
+                    )
+                );
+
+
+                nextUrl =
+                    data.next
+                    ||
+                    null;
+            }
+
+
+            return allResults;
+        }
+
+
+        /* =====================================================
+           AUTH
+           ===================================================== */
+
+        if (
+            !window.TernNestAuth ||
+            !window.TernNestAuth
+                .authenticatedFetch
+        ) {
+            return;
+        }
+
+
+        if (
+            !window.TernNestAuth
+                .getAccessToken()
+            &&
+            !window.TernNestAuth
+                .getRefreshToken()
+        ) {
+
+            window.location.href =
+                "/login/?next=/dashboard/";
+
+            return;
+        }
+
+
+        const userResponse =
+            await window.TernNestAuth
+                .authenticatedFetch(
+                    "/api/v1/accounts/me/"
+                );
+
+
+        if (!userResponse.ok) {
+
+            window.location.href =
+                "/login/?next=/dashboard/";
+
+            return;
+        }
+
+
+        const currentUser =
+            await userResponse.json();
+
+
+        /* =====================================================
+           REVIEWS INDEX
+           ===================================================== */
+
+        /*
+         * Map:
+         *
+         * booking id -> Review
+         *
+         * Allows us to decide whether Dashboard
+         * should show:
+         *
+         * Write review
+         * or
+         * Edit review
+         */
+
+        let reviewsByBooking =
+            new Map();
+
+
+        async function loadReviewIndex() {
+
+            const reviews =
+                await fetchAllPages(
+                    "/api/v1/reviews/"
+                );
+
+
+            reviewsByBooking =
+                new Map();
+
+
+            reviews.forEach(
+                review => {
+
+                    reviewsByBooking.set(
+                        Number(
+                            review.booking
+                        ),
+                        review
+                    );
+                }
+            );
+        }
+
+
+        /* =====================================================
+           OWNER LISTINGS
+           ===================================================== */
+
+        async function loadMyListings() {
+
+            try {
+
+                const listings =
+                    await fetchAllPages(
+                        "/api/v1/listings/"
+                    );
+
+
+                const myListings =
+                    listings.filter(
+                        listing =>
+                            listing.owner
+                            &&
+                            listing.owner.id ===
+                                currentUser.id
+                    );
+
+
+                myListingsCount.textContent =
+                    myListings.length;
+
+
+                renderMyListings(
+                    myListings
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Listings loading error:",
+                    error
+                );
+
+
+                showEmptyState(
+                    myListingsList,
+                    "Unable to load listings",
+                    "Please refresh the page and try again."
+                );
+            }
+        }
+
+
+        function renderMyListings(
+            listings
+        ) {
+
+            myListingsList.innerHTML =
+                "";
+
+
+            if (
+                listings.length === 0
+            ) {
+
+                showEmptyState(
+                    myListingsList,
+                    "No listings yet",
+                    "Create your first property on TernNest."
+                );
+
+                return;
+            }
+
+
+            listings.forEach(
+                listing => {
+
+                    myListingsList
+                        .appendChild(
+                            createOwnerListingCard(
+                                listing
+                            )
+                        );
+                }
+            );
+        }
+
+
+        function createOwnerListingCard(
+            listing
+        ) {
+
+            const imageUrl =
+                getMainImage(
+                    listing
+                );
+
+
+            const card =
+                document.createElement(
+                    "article"
+                );
+
+
+            card.className =
+                "owner-listing-card";
+
+
+            card.innerHTML = `
+
+                ${
+                    imageUrl
+                        ? `
+                            <a
+                                href="/listings/${listing.id}/"
+                            >
+                                <img
+                                    src="${escapeHtml(imageUrl)}"
+                                    alt="${escapeHtml(listing.title)}"
+                                    class="owner-listing-card__image"
+                                >
+                            </a>
+                        `
+                        : `
+                            <div
+                                class="owner-listing-card__placeholder"
+                            >
+                                No photo uploaded
+                            </div>
+                        `
+                }
+
+
+                <div
+                    class="owner-listing-card__content"
+                >
+
+                    <h3>
+                        ${escapeHtml(
+                            listing.title
+                        )}
+                    </h3>
+
+
+                    <p
+                        class="owner-listing-card__location"
+                    >
+                        ${escapeHtml(
+                            listing.city
+                        )},
+                        ${escapeHtml(
+                            listing.country
+                        )}
+                    </p>
+
+
+                    <p
+                        class="owner-listing-card__details"
+                    >
+                        ${listing.max_guests}
+                        guests ·
+
+                        ${listing.bedrooms}
+                        bedrooms ·
+
+                        ${listing.beds}
+                        beds
+                    </p>
+
+
+                    <p
+                        class="owner-listing-card__price"
+                    >
+                        €${listing.price_per_night}
+                        / night
+                    </p>
+
+                </div>
+
+
+                <div
+                    class="owner-listing-card__side"
+                >
+
+                    <span
+                        class="
+                            owner-listing-status
+                            ${
+                                listing.is_active
+                                    ? "owner-listing-status--published"
+                                    : "owner-listing-status--draft"
+                            }
+                        "
+                    >
+                        ${
+                            listing.is_active
+                                ? "Published"
+                                : "Draft"
+                        }
+                    </span>
+
+
+                    <div
+                        class="owner-listing-actions"
+                    >
+
+                        <a
+                            href="/listings/${listing.id}/"
+                            class="button button--secondary"
+                        >
+                            View
+                        </a>
+
+
+                        <a
+                            href="/listings/${listing.id}/edit/"
+                            class="button button--secondary"
+                        >
+                            Edit
+                        </a>
+
+
+                        <a
+                            href="/listings/${listing.id}/availability/"
+                            class="button button--secondary"
+                        >
+                            Availability
+                        </a>
+
+
+                        <button
+                            type="button"
+                            class="
+                                button
+                                ${
+                                    listing.is_active
+                                        ? "button--secondary"
+                                        : "button--primary"
+                                }
+                            "
+                            data-status-button
+                        >
+                            ${
+                                listing.is_active
+                                    ? "Deactivate"
+                                    : "Publish"
+                            }
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="button button--danger"
+                            data-delete-button
+                        >
+                            Delete
+                        </button>
+
+                    </div>
+
+
+                    <p
+                        class="owner-listing-message"
+                        data-listing-message
+                        hidden
+                    ></p>
+
+                </div>
+            `;
+
+
+            const statusButton =
+                card.querySelector(
+                    "[data-status-button]"
+                );
+
+
+            const deleteButton =
+                card.querySelector(
+                    "[data-delete-button]"
+                );
+
+
+            const message =
+                card.querySelector(
+                    "[data-listing-message]"
+                );
+
+
+            function showMessage(
+                text,
+                type
+            ) {
+
+                message.hidden =
+                    false;
+
+                message.textContent =
+                    text;
+
+                message.className =
+                    (
+                        "owner-listing-message "
+                        +
+                        `owner-listing-message--${type}`
+                    );
+            }
+
+
+            /* Publish / Deactivate */
+
+            statusButton.addEventListener(
+                "click",
+                async () => {
+
+                    statusButton.disabled =
+                        true;
+
+
+                    const newStatus =
+                        !listing.is_active;
+
+
+                    statusButton.textContent =
+                        newStatus
+                            ? "Publishing..."
+                            : "Deactivating...";
+
+
+                    const response =
+                        await window.TernNestAuth
+                            .authenticatedFetch(
+                                `/api/v1/listings/${listing.id}/`,
+                                {
+                                    method:
+                                        "PATCH",
+
+                                    headers: {
+                                        "Content-Type":
+                                            "application/json",
+                                    },
+
+                                    body:
+                                        JSON.stringify(
+                                            {
+                                                is_active:
+                                                    newStatus,
+                                            }
+                                        ),
+                                }
+                            );
+
+
+                    let data =
+                        null;
+
+
+                    try {
+
+                        data =
+                            await response.json();
+
+                    } catch {
+
+                        data =
+                            null;
+                    }
+
+
+                    if (!response.ok) {
+
+                        showMessage(
+                            formatErrors(
+                                data
+                            ),
+                            "error"
+                        );
+
+
+                        statusButton.disabled =
+                            false;
+
+
+                        statusButton.textContent =
+                            listing.is_active
+                                ? "Deactivate"
+                                : "Publish";
+
+
+                        return;
+                    }
+
+
+                    await loadMyListings();
+                }
+            );
+
+
+            /* Delete listing */
+
+            deleteButton.addEventListener(
+                "click",
+                async () => {
+
+                    const confirmed =
+                        window.confirm(
+                            (
+                                `Permanently delete "${listing.title}"?`
+                                +
+                                "\n\n"
+                                +
+                                "This cannot be undone."
+                            )
+                        );
+
+
+                    if (!confirmed) {
+                        return;
+                    }
+
+
+                    deleteButton.disabled =
+                        true;
+
+
+                    deleteButton.textContent =
+                        "Deleting...";
+
+
+                    const response =
+                        await window.TernNestAuth
+                            .authenticatedFetch(
+                                `/api/v1/listings/${listing.id}/`,
+                                {
+                                    method:
+                                        "DELETE",
+                                }
+                            );
+
+
+                    if (
+                        response.status === 204
+                    ) {
+
+                        await loadMyListings();
+
+                        return;
+                    }
+
+
+                    let data =
+                        null;
+
+
+                    try {
+
+                        data =
+                            await response.json();
+
+                    } catch {
+
+                        data =
+                            null;
+                    }
+
+
+                    showMessage(
+                        formatErrors(
+                            data
+                        ),
+                        "error"
+                    );
+
+
+                    deleteButton.disabled =
+                        false;
+
+
+                    deleteButton.textContent =
+                        "Delete";
+                }
+            );
+
+
+            return card;
+        }
+
+
+        /* =====================================================
+           BOOKING ACTION
+           ===================================================== */
+
+        async function performBookingAction(
+            booking,
+            action,
+            button,
+            card,
+            confirmationText
+        ) {
+
+            if (
+                confirmationText
+                &&
+                !window.confirm(
+                    confirmationText
+                )
+            ) {
+                return;
+            }
+
+
+            const actionLabels = {
+                cancel:
+                    "Cancelling...",
+
+                confirm:
+                    "Confirming...",
+
+                complete:
+                    "Completing...",
+            };
+
+
+            button.disabled =
+                true;
+
+
+            button.textContent =
+                actionLabels[action];
+
+
+            const response =
+                await window.TernNestAuth
+                    .authenticatedFetch(
+                        `/api/v1/bookings/${booking.id}/${action}/`,
+                        {
+                            method:
+                                "POST",
+                        }
+                    );
+
+
+            let data =
+                null;
+
+
+            try {
+
+                data =
+                    await response.json();
+
+            } catch {
+
+                data =
+                    null;
+            }
+
+
+            if (!response.ok) {
+
+                const message =
+                    card.querySelector(
+                        "[data-booking-message]"
+                    );
+
+
+                message.hidden =
+                    false;
+
+
+                message.textContent =
+                    formatErrors(
+                        data
+                    );
+
+
+                message.className =
+                    (
+                        "booking-card__message "
+                        +
+                        "booking-card__message--error"
+                    );
+
+
+                button.disabled =
+                    false;
+
+
+                if (
+                    action === "cancel"
+                ) {
+                    button.textContent =
+                        "Cancel";
+                }
+
+
+                if (
+                    action === "confirm"
+                ) {
+                    button.textContent =
+                        "Confirm";
+                }
+
+
+                if (
+                    action === "complete"
+                ) {
+                    button.textContent =
+                        "Complete";
+                }
+
+
+                return;
+            }
+
+
+            await loadBookings();
+        }
+
+
+        /* =====================================================
+           BOOKING CARD
+           ===================================================== */
+
+        function createBookingCard(
+            booking,
+            role,
+            history
+        ) {
+
+            const listing =
+                booking.listing;
+
+
+            const imageUrl =
+                getMainImage(
+                    listing
+                );
+
+
+            const card =
+                document.createElement(
+                    "article"
+                );
+
+
+            card.className =
+                history
+                    ? (
+                        "booking-card "
+                        +
+                        "booking-card--history"
+                    )
+                    : "booking-card";
+
+
+            card.innerHTML = `
+
+                ${
+                    imageUrl
+                        ? `
+                            <a
+                                href="/listings/${listing.id}/"
+                            >
+                                <img
+                                    src="${escapeHtml(imageUrl)}"
+                                    alt="${escapeHtml(listing.title)}"
+                                    class="booking-card__image"
+                                >
+                            </a>
+                        `
+                        : `
+                            <div
+                                class="booking-card__image-placeholder"
+                            >
+                                No image
+                            </div>
+                        `
+                }
+
+
+                <div
+                    class="booking-card__content"
+                >
+
+                    <h3>
+                        <a
+                            href="/listings/${listing.id}/"
+                        >
+                            ${escapeHtml(
+                                listing.title
+                            )}
+                        </a>
+                    </h3>
+
+
+                    <p
+                        class="booking-card__location"
+                    >
+                        ${escapeHtml(
+                            listing.city
+                        )},
+                        ${escapeHtml(
+                            listing.country
+                        )}
+                    </p>
+
+
+                    <p
+                        class="booking-card__details"
+                    >
+                        ${formatDate(
+                            booking.check_in
+                        )}
+
+                        →
+
+                        ${formatDate(
+                            booking.check_out
+                        )}
+                    </p>
+
+
+                    <p
+                        class="booking-card__details"
+                    >
+                        ${booking.book_days}
+
+                        ${
+                            booking.book_days === 1
+                                ? "night"
+                                : "nights"
+                        }
+
+                        ·
+
+                        ${booking.guests}
+
+                        ${
+                            booking.guests === 1
+                                ? "guest"
+                                : "guests"
+                        }
+                    </p>
+
+
+                    ${
+                        role === "host"
+                            ? `
+                                <p
+                                    class="booking-card__guest"
+                                >
+                                    Guest:
+
+                                    <strong>
+                                        ${escapeHtml(
+                                            guestName(
+                                                booking.guest
+                                            )
+                                        )}
+                                    </strong>
+                                </p>
+                            `
+                            : ""
+                    }
+
+                </div>
+
+
+                <div
+                    class="booking-card__side"
+                >
+
+                    <span
+                        class="booking-card__price"
+                    >
+                        €${booking.total_price}
+                    </span>
+
+
+                    <span
+                        class="
+                            booking-status
+                            booking-status--${booking.status}
+                        "
+                    >
+                        ${escapeHtml(
+                            booking.status
+                        )}
+                    </span>
+
+
+                    <div
+                        class="booking-card__actions"
+                        data-booking-actions
+                    ></div>
+
+
+                    <p
+                        class="booking-card__message"
+                        data-booking-message
+                        hidden
+                    ></p>
+
+                </div>
+            `;
+
+
+            const actions =
+                card.querySelector(
+                    "[data-booking-actions]"
+                );
+
+
+            /* =================================================
+               HISTORY ACTIONS
+               ================================================= */
+
+            if (history) {
+
+                /*
+                 * Only the guest can write/edit a review.
+                 *
+                 * Cancelled booking:
+                 * no review button.
+                 */
+
+                if (
+                    role === "guest"
+                    &&
+                    booking.status === "completed"
+                ) {
+
+                    const existingReview =
+                        reviewsByBooking.get(
+                            Number(
+                                booking.id
+                            )
+                        );
+
+
+                    const reviewLink =
+                        document.createElement(
+                            "a"
+                        );
+
+
+                    reviewLink.href =
+                        `/bookings/${booking.id}/review/`;
+
+
+                    reviewLink.className =
+                        existingReview
+                            ? (
+                                "button "
+                                +
+                                "button--secondary "
+                                +
+                                "review-action"
+                            )
+                            : (
+                                "button "
+                                +
+                                "button--primary "
+                                +
+                                "review-action"
+                            );
+
+
+                    reviewLink.textContent =
+                        existingReview
+                            ? "Edit review"
+                            : "Write review";
+
+
+                    actions.appendChild(
+                        reviewLink
+                    );
+                }
+
+
+                return card;
+            }
+
+
+            /* =================================================
+               ACTIVE GUEST BOOKING
+               ================================================= */
+
+            if (
+                role === "guest"
+                &&
+                (
+                    booking.status === "pending"
+                    ||
+                    booking.status === "confirmed"
+                )
+            ) {
+
+                const cancelButton =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                cancelButton.type =
+                    "button";
+
+
+                cancelButton.className =
+                    "button button--danger";
+
+
+                cancelButton.textContent =
+                    "Cancel booking";
+
+
+                cancelButton.addEventListener(
+                    "click",
+                    () => {
+
+                        performBookingAction(
+                            booking,
+                            "cancel",
+                            cancelButton,
+                            card,
+                            "Cancel this booking?"
+                        );
+                    }
+                );
+
+
+                actions.appendChild(
+                    cancelButton
+                );
+            }
+
+
+            /* =================================================
+               HOST: PENDING
+               ================================================= */
+
+            if (
+                role === "host"
+                &&
+                booking.status === "pending"
+            ) {
+
+                const confirmButton =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                confirmButton.type =
+                    "button";
+
+
+                confirmButton.className =
+                    "button button--primary";
+
+
+                confirmButton.textContent =
+                    "Confirm";
+
+
+                confirmButton.addEventListener(
+                    "click",
+                    () => {
+
+                        performBookingAction(
+                            booking,
+                            "confirm",
+                            confirmButton,
+                            card,
+                            "Confirm this guest booking?"
+                        );
+                    }
+                );
+
+
+                actions.appendChild(
+                    confirmButton
+                );
+
+
+                const cancelButton =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                cancelButton.type =
+                    "button";
+
+
+                cancelButton.className =
+                    "button button--danger";
+
+
+                cancelButton.textContent =
+                    "Cancel";
+
+
+                cancelButton.addEventListener(
+                    "click",
+                    () => {
+
+                        performBookingAction(
+                            booking,
+                            "cancel",
+                            cancelButton,
+                            card,
+                            "Cancel this guest reservation?"
+                        );
+                    }
+                );
+
+
+                actions.appendChild(
+                    cancelButton
+                );
+            }
+
+
+            /* =================================================
+               HOST: CONFIRMED
+               ================================================= */
+
+            if (
+                role === "host"
+                &&
+                booking.status === "confirmed"
+            ) {
+
+                const checkOutPassed =
+                    new Date(
+                        booking.check_out
+                    )
+                    <=
+                    new Date();
+
+
+                if (checkOutPassed) {
+
+                    const completeButton =
+                        document.createElement(
+                            "button"
+                        );
+
+
+                    completeButton.type =
+                        "button";
+
+
+                    completeButton.className =
+                        "button button--primary";
+
+
+                    completeButton.textContent =
+                        "Complete";
+
+
+                    completeButton.addEventListener(
+                        "click",
+                        () => {
+
+                            performBookingAction(
+                                booking,
+                                "complete",
+                                completeButton,
+                                card,
+                                "Mark this stay as completed?"
+                            );
+                        }
+                    );
+
+
+                    actions.appendChild(
+                        completeButton
+                    );
+                }
+
+
+                const cancelButton =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                cancelButton.type =
+                    "button";
+
+
+                cancelButton.className =
+                    "button button--danger";
+
+
+                cancelButton.textContent =
+                    "Cancel";
+
+
+                cancelButton.addEventListener(
+                    "click",
+                    () => {
+
+                        performBookingAction(
+                            booking,
+                            "cancel",
+                            cancelButton,
+                            card,
+                            "Cancel this confirmed reservation?"
+                        );
+                    }
+                );
+
+
+                actions.appendChild(
+                    cancelButton
+                );
+            }
+
+
+            return card;
+        }
+
+
+        /* =====================================================
+           RENDER BOOKING LIST
+           ===================================================== */
+
+        function renderBookingList(
+            container,
+            bookings,
+            role,
+            history,
+            emptyTitle,
+            emptyText
+        ) {
+
+            container.innerHTML =
+                "";
+
+
+            if (
+                bookings.length === 0
+            ) {
+
+                showEmptyState(
+                    container,
+                    emptyTitle,
+                    emptyText
+                );
+
+                return;
+            }
+
+
+            bookings.forEach(
+                booking => {
+
+                    container.appendChild(
+                        createBookingCard(
+                            booking,
+                            role,
+                            history
+                        )
+                    );
+                }
+            );
+        }
+
+
+        /* =====================================================
+           LOAD BOOKINGS
+           ===================================================== */
+
+        async function loadBookings() {
+
+            try {
+
+                /*
+                 * Load all reviews first.
+                 * Then we know whether completed booking
+                 * needs Write review or Edit review.
+                 */
+
+                await loadReviewIndex();
+
+
+                /*
+                 * Load ALL booking pages.
+                 */
+
+                const bookings =
+                    await fetchAllPages(
+                        "/api/v1/bookings/"
+                    );
+
+
+                /*
+                 * Current user is guest.
+                 */
+
+                const myAllBookings =
+                    bookings.filter(
+                        booking =>
+                            booking.guest
+                            &&
+                            booking.guest.id ===
+                                currentUser.id
+                    );
+
+
+                /*
+                 * Current user is owner of listing.
+                 */
+
+                const guestAllBookings =
+                    bookings.filter(
+                        booking =>
+                            booking.listing
+                            &&
+                            booking.listing.owner
+                            &&
+                            booking.listing.owner.id ===
+                                currentUser.id
+                    );
+
+
+                const activeMyBookings =
+                    myAllBookings.filter(
+                        isActiveBooking
+                    );
+
+
+                const myHistory =
+                    myAllBookings.filter(
+                        isHistoryBooking
+                    );
+
+
+                const activeGuestBookings =
+                    guestAllBookings.filter(
+                        isActiveBooking
+                    );
+
+
+                const guestHistory =
+                    guestAllBookings.filter(
+                        isHistoryBooking
+                    );
+
+
+                /* Sort active bookings */
+
+                activeMyBookings.sort(
+                    (a, b) =>
+                        new Date(
+                            a.check_in
+                        )
+                        -
+                        new Date(
+                            b.check_in
+                        )
+                );
+
+
+                activeGuestBookings.sort(
+                    (a, b) =>
+                        new Date(
+                            a.check_in
+                        )
+                        -
+                        new Date(
+                            b.check_in
+                        )
+                );
+
+
+                /* Sort history newest first */
+
+                myHistory.sort(
+                    (a, b) =>
+                        new Date(
+                            b.check_out
+                        )
+                        -
+                        new Date(
+                            a.check_out
+                        )
+                );
+
+
+                guestHistory.sort(
+                    (a, b) =>
+                        new Date(
+                            b.check_out
+                        )
+                        -
+                        new Date(
+                            a.check_out
+                        )
+                );
+
+
+                /* Counters */
+
+                myBookingsCount.textContent =
+                    activeMyBookings.length;
+
+
+                guestBookingsCount.textContent =
+                    activeGuestBookings.length;
+
+
+                myHistoryCount.textContent =
+                    myHistory.length;
+
+
+                guestHistoryCount.textContent =
+                    guestHistory.length;
+
+
+                /* Active bookings as guest */
+
+                renderBookingList(
+                    myBookingsList,
+                    activeMyBookings,
+                    "guest",
+                    false,
+                    "No active bookings",
+                    (
+                        "Your pending and confirmed "
+                        +
+                        "bookings will appear here."
+                    )
+                );
+
+
+                /* History as guest */
+
+                renderBookingList(
+                    myBookingHistory,
+                    myHistory,
+                    "guest",
+                    true,
+                    "No booking history yet",
+                    (
+                        "Completed and cancelled stays "
+                        +
+                        "will appear here."
+                    )
+                );
+
+
+                /* Active bookings as host */
+
+                renderBookingList(
+                    guestBookingsList,
+                    activeGuestBookings,
+                    "host",
+                    false,
+                    "No active guest bookings",
+                    (
+                        "New reservations for your "
+                        +
+                        "properties will appear here."
+                    )
+                );
+
+
+                /* History as host */
+
+                renderBookingList(
+                    guestBookingHistory,
+                    guestHistory,
+                    "host",
+                    true,
+                    "No guest booking history yet",
+                    (
+                        "Completed and cancelled guest "
+                        +
+                        "reservations will appear here."
+                    )
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Bookings loading error:",
+                    error
+                );
+
+
+                showEmptyState(
+                    myBookingsList,
+                    "Unable to load bookings",
+                    "Please refresh the page and try again."
+                );
+
+
+                showEmptyState(
+                    myBookingHistory,
+                    "Unable to load history",
+                    "Please refresh the page and try again."
+                );
+
+
+                showEmptyState(
+                    guestBookingsList,
+                    "Unable to load bookings",
+                    "Please refresh the page and try again."
+                );
+
+
+                showEmptyState(
+                    guestBookingHistory,
+                    "Unable to load history",
+                    "Please refresh the page and try again."
+                );
+            }
+        }
+
+
+        /* =====================================================
+           FAVORITES
+           ===================================================== */
+
+        async function loadFavorites() {
+
+            try {
+
+                const favorites =
+                    await fetchAllPages(
+                        "/api/v1/listings/favorites/"
+                    );
+
+
+                favoritesCount.textContent =
+                    favorites.length;
+
+
+            } catch (error) {
+
+                console.error(
+                    "Favorites loading error:",
+                    error
+                );
+            }
+        }
+
+
+        /* =====================================================
+           INITIAL LOAD
+           ===================================================== */
+
+        await Promise.all([
+            loadMyListings(),
+            loadBookings(),
+            loadFavorites(),
+        ]);
+
+    }
+);
+
+</script>
+
+{% endblock %}

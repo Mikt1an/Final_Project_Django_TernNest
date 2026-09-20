@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     "apps.bookings.apps.BookingsConfig",
     "apps.reviews.apps.ReviewsConfig",
     "apps.ai_assistant.apps.AiAssistantConfig",
+    "apps.frontend.apps.FrontendConfig",
 ]
 
 

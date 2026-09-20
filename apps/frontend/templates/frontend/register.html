@@ -1,0 +1,127 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}Create account | TernNest{% endblock %}
+
+{% block content %}
+    <section class="auth-section">
+        <div class="container">
+            <div class="form-card form-card--wide">
+                <div class="form-card__heading">
+                    <span class="eyebrow">Join TernNest</span>
+                    <h1>Create your account</h1>
+
+                    <p>
+                        Book your next stay or list your own home.
+                    </p>
+                </div>
+
+                <form id="register-form" class="form-grid">
+                    <label class="form-field">
+                        <span>First name</span>
+
+                        <input
+                            type="text"
+                            name="first_name"
+                            placeholder="First name"
+                            autocomplete="given-name"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Last name</span>
+
+                        <input
+                            type="text"
+                            name="last_name"
+                            placeholder="Last name"
+                            autocomplete="family-name"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Email address</span>
+
+                        <input
+                            type="email"
+                            name="email"
+                            placeholder="name@example.com"
+                            autocomplete="email"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Phone number</span>
+
+                        <input
+                            type="tel"
+                            name="phone"
+                            placeholder="+49 123 456789"
+                            autocomplete="tel"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Birthday</span>
+
+                        <input
+                            type="date"
+                            name="birthday"
+                            autocomplete="bday"
+                        >
+                    </label>
+
+                    <div class="form-field form-field--placeholder"></div>
+
+                    <label class="form-field">
+                        <span>Password</span>
+
+                        <input
+                            type="password"
+                            name="password"
+                            placeholder="Create a password"
+                            autocomplete="new-password"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Confirm password</span>
+
+                        <input
+                            type="password"
+                            name="password_confirm"
+                            placeholder="Repeat your password"
+                            autocomplete="new-password"
+                            required
+                        >
+                    </label>
+
+                    <div
+                        id="register-message"
+                        class="form-message form-field--full"
+                        hidden
+                    ></div>
+
+                    <button
+                        class="button button--primary button--full form-field--full"
+                        type="button"
+                    >
+                        Create account
+                    </button>
+                </form>
+
+                <p class="form-card__footer">
+                    Already have an account?
+
+                    <a href="{% url 'frontend:login' %}">
+                        Log in
+                    </a>
+                </p>
+            </div>
+        </div>
+    </section>
+{% endblock %}

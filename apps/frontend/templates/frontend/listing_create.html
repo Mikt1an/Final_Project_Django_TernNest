@@ -1,0 +1,235 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+
+{% block title %}List your home | TernNest{% endblock %}
+
+{% block content %}
+    <section class="page-heading">
+        <div class="container">
+            <span class="eyebrow">Become a host</span>
+            <h1>List your home</h1>
+
+            <p>
+                Add information about your property and make it
+                available to TernNest guests.
+            </p>
+        </div>
+    </section>
+
+    <section class="content-section content-section--compact">
+        <div class="container">
+            <div class="listing-form-card">
+                <form id="listing-create-form" class="form-grid">
+                    <label class="form-field form-field--full">
+                        <span>Listing title</span>
+
+                        <input
+                            type="text"
+                            name="title"
+                            placeholder="Bright apartment near the city centre"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Property type</span>
+
+                        <select name="listing_type" required>
+                            <option value="">Select a type</option>
+                            <option value="apartment">Apartment</option>
+                            <option value="house">House</option>
+                            <option value="studio">Studio</option>
+                        </select>
+                    </label>
+
+                    <label class="form-field">
+                        <span>Price per night</span>
+
+                        <input
+                            type="number"
+                            name="price_per_night"
+                            placeholder="120.00"
+                            min="1"
+                            max="10000"
+                            step="0.01"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Country</span>
+
+                        <input
+                            type="text"
+                            name="country"
+                            placeholder="Germany"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>City</span>
+
+                        <input
+                            type="text"
+                            name="city"
+                            placeholder="Munich"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field form-field--full">
+                        <span>Address</span>
+
+                        <input
+                            type="text"
+                            name="address"
+                            placeholder="Street and house number"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Earliest check-in time</span>
+
+                        <input
+                            type="time"
+                            name="earliest_check_in_time"
+                            value="15:00"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Latest check-out time</span>
+
+                        <input
+                            type="time"
+                            name="latest_check_out_time"
+                            value="11:00"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Maximum guests</span>
+
+                        <input
+                            type="number"
+                            name="max_guests"
+                            value="1"
+                            min="1"
+                            max="30"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Bedrooms</span>
+
+                        <input
+                            type="number"
+                            name="bedrooms"
+                            value="1"
+                            min="0"
+                            max="20"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Beds</span>
+
+                        <input
+                            type="number"
+                            name="beds"
+                            value="1"
+                            min="1"
+                            max="30"
+                            required
+                        >
+                    </label>
+
+                    <label class="form-field">
+                        <span>Bathrooms</span>
+
+                        <input
+                            type="number"
+                            name="bathrooms"
+                            value="1"
+                            min="1"
+                            max="20"
+                            required
+                        >
+                    </label>
+
+                    <fieldset class="amenities-field form-field--full">
+                        <legend>Amenities</legend>
+
+                        <div id="amenities-list" class="amenities-grid">
+                            <p
+                                id="amenities-status"
+                                class="amenities-status"
+                            >
+                                Loading amenities...
+                            </p>
+                        </div>
+
+                        <small class="amenities-counter">
+                            <span id="amenities-counter">0</span>
+                            of 20 amenities selected
+                        </small>
+                    </fieldset>
+
+                    <label class="form-field form-field--full">
+                        <span>Description</span>
+
+                        <textarea
+                            name="description"
+                            rows="6"
+                            placeholder="Describe your property..."
+                            required
+                        ></textarea>
+                    </label>
+
+                    <label class="form-field form-field--full">
+                        <span>Property photos</span>
+
+                        <input
+                            type="file"
+                            name="images"
+                            accept=".jpg,.jpeg,.png,.webp"
+                            multiple
+                            required
+                        >
+
+                        <small>
+                            You will be able to upload between 1 and 4 images.
+                        </small>
+                    </label>
+
+                    <div
+                        id="listing-message"
+                        class="form-message form-field--full"
+                        hidden
+                    ></div>
+
+                    <button
+                        id="listing-submit-button"
+                        class="button button--primary button--full form-field--full"
+                        type="submit"
+                    >
+                        Publish listing
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+    <script
+        src="{% static 'frontend/js/listing_create.js' %}"
+        defer
+    ></script>
+{% endblock %}

@@ -1,3 +1,9 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Listing, ListingImage, Amenity, Favorite
+
+
+admin.site.register(Listing)
+admin.site.register(ListingImage)
+admin.site.register(Amenity)
+admin.site.register(Favorite)

@@ -41,6 +41,10 @@ urlpatterns = [
         f"{settings.API_PREFIX}/{settings.API_VERSION}/reviews/",
         include("apps.reviews.urls"),
     ),
+    path(
+        f"",
+        include("apps.frontend.urls"),
+    ),
 ]
 
 

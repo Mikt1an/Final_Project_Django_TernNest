@@ -1,0 +1,1274 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}Edit listing | TernNest{% endblock %}
+
+{% block content %}
+
+<section class="page-heading">
+    <div class="container">
+        <span class="eyebrow">Hosting</span>
+
+        <h1>Edit listing</h1>
+
+        <p>
+            Update your property information,
+            photos and publication status.
+        </p>
+    </div>
+</section>
+
+
+<section class="content-section content-section--compact">
+    <div class="container">
+
+        <div id="listing-edit-loading" class="empty-state">
+            <p>Loading listing...</p>
+        </div>
+
+
+        <div
+            id="listing-edit-content"
+            hidden
+        >
+
+            <div class="listing-form-card">
+
+                <form
+                    id="listing-edit-form"
+                    class="form-grid"
+                >
+
+                    <label class="form-field form-field--full">
+                        <span>Listing title</span>
+
+                        <input
+                            type="text"
+                            name="title"
+                            required
+                        >
+                    </label>
+
+
+                    <label class="form-field">
+                        <span>Property type</span>
+
+                        <select
+                            name="listing_type"
+                            required
+                        >
+                            <option value="apartment">
+                                Apartment
+                            </option>
+
+                            <option value="house">
+                                House
+                            </option>
+
+                            <option value="studio">
+                                Studio
+                            </option>
+                        </select>
+                    </label>
+
+
+                    <label class="form-field">
+                        <span>Price per night</span>
+
+                        <input
+                            type="number"
+                            name="price_per_night"
+                            min="1"
+                            max="10000"
+                            step="0.01"
+                            required
+                        >
+                    </label>
+
+
+                    <label class="form-field">
+                        <span>Country</span>
+
+                        <input
+                            type="text"
+                            name="country"
+                            required
+                        >
+                    </label>
+
+
+                    <label class="form-field">
+                        <span>City</span>
+
+                        <input
+                            type="text"
+                            name="city"
+                            required
+                        >
+                    </label>
+
+
+                    <label class="form-field form-field--full">
+                        <span>Address</span>
+
+                        <input
+                            type="text"
+                            name="address"
+                            required
+                        >
+                    </label>
+
+
+                    <label class="form-field">
+                        <span>Earliest check-in time</span>
+
+                        <input
+                            type="time"
+                            name="earliest_check_in_time"
+                            required
+                        >
+                    </label>
+
+
+                    <label class="form-field">
+                        <span>Latest check-out time</span>
+
+                        <input
+                            type="time"
+                            name="latest_check_out_time"
+                            required
+                        >
+                    </label>
+
+
+                    <label class="form-field">
+                        <span>Maximum guests</span>
+
+                        <input
+                            type="number"
+                            name="max_guests"
+                            min="1"
+                            max="30"
+                            required
+                        >
+                    </label>
+
+
+                    <label class="form-field">
+                        <span>Bedrooms</span>
+
+                        <input
+                            type="number"
+                            name="bedrooms"
+                            min="0"
+                            max="20"
+                            required
+                        >
+                    </label>
+
+
+                    <label class="form-field">
+                        <span>Beds</span>
+
+                        <input
+                            type="number"
+                            name="beds"
+                            min="1"
+                            max="30"
+                            required
+                        >
+                    </label>
+
+
+                    <label class="form-field">
+                        <span>Bathrooms</span>
+
+                        <input
+                            type="number"
+                            name="bathrooms"
+                            min="1"
+                            max="20"
+                            required
+                        >
+                    </label>
+
+
+                    <fieldset class="amenities-field form-field--full">
+                        <legend>Amenities</legend>
+
+                        <div
+                            id="edit-amenities-list"
+                            class="amenities-grid"
+                        >
+                            Loading amenities...
+                        </div>
+
+                        <small class="amenities-counter">
+                            <span id="edit-amenities-counter">
+                                0
+                            </span>
+                            of 20 amenities selected
+                        </small>
+                    </fieldset>
+
+
+                    <label class="form-field form-field--full">
+                        <span>Description</span>
+
+                        <textarea
+                            name="description"
+                            rows="6"
+                            required
+                        ></textarea>
+                    </label>
+
+
+                    <div
+                        id="edit-message"
+                        class="form-message form-field--full"
+                        hidden
+                    ></div>
+
+
+                    <button
+                        type="submit"
+                        class="button button--primary button--full form-field--full"
+                    >
+                        Save changes
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <section class="listing-owner-section">
+
+                <div class="section-heading">
+                    <div>
+                        <span class="eyebrow">
+                            Property media
+                        </span>
+
+                        <h2>Photos</h2>
+                    </div>
+
+                    <p>
+                        Maximum 4 photos.
+                    </p>
+                </div>
+
+
+                <div
+                    id="listing-images"
+                    class="owner-images-grid"
+                ></div>
+
+
+                <div class="owner-image-upload">
+                    <input
+                        type="file"
+                        id="new-listing-image"
+                        accept=".jpg,.jpeg,.png,.webp"
+                    >
+
+                    <button
+                        type="button"
+                        id="upload-image-button"
+                        class="button button--secondary"
+                    >
+                        Upload photo
+                    </button>
+                </div>
+
+            </section>
+
+
+            <section class="listing-owner-section">
+
+                <div class="section-heading">
+                    <div>
+                        <span class="eyebrow">
+                            Publication
+                        </span>
+
+                        <h2>Listing status</h2>
+                    </div>
+                </div>
+
+
+                <div class="owner-actions">
+                    <span
+                        id="listing-status"
+                        class="owner-status"
+                    ></span>
+
+
+                    <button
+                        type="button"
+                        id="toggle-listing-status"
+                        class="button button--primary"
+                    ></button>
+
+
+                    <a
+                        id="availability-link"
+                        class="button button--secondary"
+                    >
+                        Availability
+                    </a>
+
+
+                    <a
+                        id="view-listing-link"
+                        class="button button--secondary"
+                    >
+                        View listing
+                    </a>
+                </div>
+
+            </section>
+
+
+            <section class="listing-owner-section danger-zone">
+                <h2>Delete listing</h2>
+
+                <p>
+                    Permanent deletion is only possible
+                    when the listing has no protected
+                    booking or other history.
+                </p>
+
+                <button
+                    type="button"
+                    id="delete-listing-button"
+                    class="button button--danger"
+                >
+                    Delete listing permanently
+                </button>
+            </section>
+
+        </div>
+
+    </div>
+</section>
+
+
+<style>
+    .listing-owner-section {
+        margin-top: 50px;
+    }
+
+    .owner-images-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .owner-image {
+        position: relative;
+        overflow: hidden;
+        border-radius: 14px;
+        background: #edf2ef;
+    }
+
+    .owner-image img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+    }
+
+    .owner-image__delete {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+
+        width: 34px;
+        height: 34px;
+
+        border: 0;
+        border-radius: 50%;
+
+        background: rgba(255, 255, 255, 0.95);
+        cursor: pointer;
+        font-weight: 800;
+    }
+
+    .owner-image__main {
+        position: absolute;
+        left: 8px;
+        bottom: 8px;
+
+        padding: 5px 8px;
+
+        background: rgba(255, 255, 255, 0.94);
+        border-radius: 999px;
+
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .owner-image-upload {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+
+        margin-top: 18px;
+    }
+
+    .owner-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .owner-status {
+        padding: 7px 11px;
+        border-radius: 999px;
+        font-weight: 800;
+        font-size: 13px;
+    }
+
+    .owner-status--published {
+        color: #176048;
+        background: #e6f6ef;
+    }
+
+    .owner-status--draft {
+        color: #846117;
+        background: #fff7d9;
+    }
+
+    .danger-zone {
+        padding: 24px;
+        border: 1px solid #e9c0bb;
+        border-radius: var(--border-radius);
+    }
+
+    .button--danger {
+        color: #fff;
+        background: #a23b32;
+        border-color: #a23b32;
+    }
+
+    @media (max-width: 700px) {
+        .owner-images-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .owner-image-upload {
+            align-items: stretch;
+            flex-direction: column;
+        }
+    }
+</style>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    const listingId = {{ listing_id }};
+
+    const loading =
+        document.getElementById("listing-edit-loading");
+
+    const content =
+        document.getElementById("listing-edit-content");
+
+    const form =
+        document.getElementById("listing-edit-form");
+
+    const message =
+        document.getElementById("edit-message");
+
+    const imagesContainer =
+        document.getElementById("listing-images");
+
+    const imageInput =
+        document.getElementById("new-listing-image");
+
+    const uploadButton =
+        document.getElementById("upload-image-button");
+
+    const statusElement =
+        document.getElementById("listing-status");
+
+    const statusButton =
+        document.getElementById("toggle-listing-status");
+
+    const deleteButton =
+        document.getElementById("delete-listing-button");
+
+    const availabilityLink =
+        document.getElementById("availability-link");
+
+    const viewLink =
+        document.getElementById("view-listing-link");
+
+    let listing = null;
+    let allAmenities = [];
+
+
+    function showMessage(text, type) {
+        message.hidden = false;
+        message.textContent = text;
+        message.className =
+            `form-message form-message--${type} form-field--full`;
+    }
+
+
+    function formatErrors(data) {
+        if (!data) {
+            return "Something went wrong.";
+        }
+
+        if (data.detail) {
+            return data.detail;
+        }
+
+        const result = [];
+
+        Object.values(data).forEach(value => {
+            const errors =
+                Array.isArray(value)
+                    ? value
+                    : [value];
+
+            errors.forEach(error => {
+                if (typeof error === "string") {
+                    result.push(error);
+                }
+            });
+        });
+
+        return result.join(" ") || "Something went wrong.";
+    }
+
+
+    if (
+        !window.TernNestAuth ||
+        !window.TernNestAuth.authenticatedFetch
+    ) {
+        return;
+    }
+
+
+    async function loadPage() {
+        const [
+            userResponse,
+            listingResponse,
+            amenitiesResponse,
+        ] = await Promise.all([
+            window.TernNestAuth.authenticatedFetch(
+                "/api/v1/accounts/me/"
+            ),
+
+            window.TernNestAuth.authenticatedFetch(
+                `/api/v1/listings/${listingId}/`
+            ),
+
+            fetch(
+                "/api/v1/listings/amenities/"
+            ),
+        ]);
+
+
+        if (!userResponse.ok) {
+            window.location.href =
+                `/login/?next=/listings/${listingId}/edit/`;
+
+            return;
+        }
+
+
+        if (!listingResponse.ok) {
+            loading.innerHTML =
+                "<h2>Listing not found.</h2>";
+
+            return;
+        }
+
+
+        const user =
+            await userResponse.json();
+
+        listing =
+            await listingResponse.json();
+
+
+        if (
+            !listing.owner ||
+            listing.owner.id !== user.id
+        ) {
+            loading.innerHTML =
+                "<h2>You do not own this listing.</h2>";
+
+            return;
+        }
+
+
+        if (amenitiesResponse.ok) {
+            const data =
+                await amenitiesResponse.json();
+
+            allAmenities =
+                Array.isArray(data)
+                    ? data
+                    : data.results || [];
+        }
+
+
+        populateForm();
+        renderAmenities();
+        renderImages();
+        renderStatus();
+
+
+        availabilityLink.href =
+            `/listings/${listingId}/availability/`;
+
+        viewLink.href =
+            `/listings/${listingId}/`;
+
+
+        loading.hidden = true;
+        content.hidden = false;
+    }
+
+
+    function populateForm() {
+        const fields = [
+            "title",
+            "listing_type",
+            "price_per_night",
+            "country",
+            "city",
+            "address",
+            "earliest_check_in_time",
+            "latest_check_out_time",
+            "max_guests",
+            "bedrooms",
+            "beds",
+            "bathrooms",
+            "description",
+        ];
+
+        fields.forEach(name => {
+            const input =
+                form.elements[name];
+
+            if (!input) {
+                return;
+            }
+
+            let value =
+                listing[name] ?? "";
+
+            if (
+                name === "earliest_check_in_time" ||
+                name === "latest_check_out_time"
+            ) {
+                value =
+                    String(value).slice(0, 5);
+            }
+
+            input.value = value;
+        });
+    }
+
+
+    function renderAmenities() {
+        const container =
+            document.getElementById(
+                "edit-amenities-list"
+            );
+
+        const selected =
+            new Set(
+                (listing.amenities || [])
+                    .map(item => item.id)
+            );
+
+
+        container.innerHTML = "";
+
+
+        allAmenities.forEach(amenity => {
+            const label =
+                document.createElement("label");
+
+            label.className =
+                "amenity-option";
+
+            label.innerHTML = `
+                <input
+                    type="checkbox"
+                    value="${amenity.id}"
+                    ${selected.has(amenity.id) ? "checked" : ""}
+                >
+                <span>${amenity.name}</span>
+            `;
+
+            container.appendChild(label);
+        });
+
+
+        updateAmenitiesCounter();
+
+
+        container.addEventListener(
+            "change",
+            event => {
+                if (
+                    event.target.type !== "checkbox"
+                ) {
+                    return;
+                }
+
+                const checked =
+                    container.querySelectorAll(
+                        'input[type="checkbox"]:checked'
+                    );
+
+                if (checked.length > 20) {
+                    event.target.checked = false;
+                }
+
+                updateAmenitiesCounter();
+            }
+        );
+    }
+
+
+    function updateAmenitiesCounter() {
+        const checked =
+            document.querySelectorAll(
+                '#edit-amenities-list input[type="checkbox"]:checked'
+            );
+
+        document.getElementById(
+            "edit-amenities-counter"
+        ).textContent = checked.length;
+    }
+
+
+    form.addEventListener(
+        "submit",
+        async event => {
+            event.preventDefault();
+
+            message.hidden = true;
+
+
+            const selectedAmenities =
+                Array.from(
+                    document.querySelectorAll(
+                        '#edit-amenities-list input[type="checkbox"]:checked'
+                    )
+                ).map(
+                    input => Number(input.value)
+                );
+
+
+            const body = {
+                title:
+                    form.elements.title.value.trim(),
+
+                listing_type:
+                    form.elements.listing_type.value,
+
+                price_per_night:
+                    form.elements.price_per_night.value,
+
+                country:
+                    form.elements.country.value.trim(),
+
+                city:
+                    form.elements.city.value.trim(),
+
+                address:
+                    form.elements.address.value.trim(),
+
+                earliest_check_in_time:
+                    form.elements.earliest_check_in_time.value,
+
+                latest_check_out_time:
+                    form.elements.latest_check_out_time.value,
+
+                max_guests:
+                    Number(
+                        form.elements.max_guests.value
+                    ),
+
+                bedrooms:
+                    Number(
+                        form.elements.bedrooms.value
+                    ),
+
+                beds:
+                    Number(
+                        form.elements.beds.value
+                    ),
+
+                bathrooms:
+                    Number(
+                        form.elements.bathrooms.value
+                    ),
+
+                amenities:
+                    selectedAmenities,
+
+                description:
+                    form.elements.description.value.trim(),
+            };
+
+
+            const response =
+                await window.TernNestAuth.authenticatedFetch(
+                    `/api/v1/listings/${listingId}/`,
+                    {
+                        method: "PATCH",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json",
+                        },
+
+                        body:
+                            JSON.stringify(body),
+                    }
+                );
+
+
+            let data = null;
+
+            try {
+                data =
+                    await response.json();
+            } catch {
+                data = null;
+            }
+
+
+            if (!response.ok) {
+                showMessage(
+                    formatErrors(data),
+                    "error"
+                );
+
+                return;
+            }
+
+
+            showMessage(
+                "Listing updated successfully.",
+                "success"
+            );
+
+
+            await reloadListing();
+        }
+    );
+
+
+    async function reloadListing() {
+        const response =
+            await window.TernNestAuth.authenticatedFetch(
+                `/api/v1/listings/${listingId}/`
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        listing =
+            await response.json();
+
+        renderImages();
+        renderStatus();
+    }
+
+
+    function renderImages() {
+        imagesContainer.innerHTML = "";
+
+        const images =
+            listing.images || [];
+
+
+        if (images.length === 0) {
+            imagesContainer.innerHTML =
+                "<p>No photos uploaded yet.</p>";
+
+            return;
+        }
+
+
+        images.forEach(image => {
+            const wrapper =
+                document.createElement("div");
+
+            wrapper.className =
+                "owner-image";
+
+
+            wrapper.innerHTML = `
+                <img
+                    src="${image.image}"
+                    alt="Property photo"
+                >
+
+                ${
+                    image.is_main
+                        ? `
+                            <span class="owner-image__main">
+                                Main
+                            </span>
+                        `
+                        : ""
+                }
+
+                <button
+                    type="button"
+                    class="owner-image__delete"
+                    title="Delete photo"
+                >
+                    ×
+                </button>
+            `;
+
+
+            wrapper
+                .querySelector(
+                    ".owner-image__delete"
+                )
+                .addEventListener(
+                    "click",
+                    async () => {
+                        await deleteImage(image);
+                    }
+                );
+
+
+            imagesContainer.appendChild(
+                wrapper
+            );
+        });
+
+
+        uploadButton.disabled =
+            images.length >= 4;
+    }
+
+
+    uploadButton.addEventListener(
+        "click",
+        async () => {
+            if (
+                !imageInput.files ||
+                imageInput.files.length === 0
+            ) {
+                showMessage(
+                    "Choose an image first.",
+                    "error"
+                );
+
+                return;
+            }
+
+
+            if (
+                (listing.images || []).length >= 4
+            ) {
+                showMessage(
+                    "Maximum 4 images are allowed.",
+                    "error"
+                );
+
+                return;
+            }
+
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "image",
+                imageInput.files[0]
+            );
+
+
+            formData.append(
+                "is_main",
+                (
+                    listing.images.length === 0
+                )
+                    ? "true"
+                    : "false"
+            );
+
+
+            const response =
+                await window.TernNestAuth.authenticatedFetch(
+                    `/api/v1/listings/${listingId}/images/`,
+                    {
+                        method: "POST",
+                        body: formData,
+                    }
+                );
+
+
+            let data = null;
+
+            try {
+                data =
+                    await response.json();
+            } catch {
+                data = null;
+            }
+
+
+            if (!response.ok) {
+                showMessage(
+                    formatErrors(data),
+                    "error"
+                );
+
+                return;
+            }
+
+
+            imageInput.value = "";
+
+            showMessage(
+                "Photo uploaded successfully.",
+                "success"
+            );
+
+
+            await reloadListing();
+        }
+    );
+
+
+    async function deleteImage(image) {
+        if (
+            !window.confirm(
+                "Delete this photo?"
+            )
+        ) {
+            return;
+        }
+
+
+        const response =
+            await window.TernNestAuth.authenticatedFetch(
+                `/api/v1/listings/${listingId}/images/${image.id}/`,
+                {
+                    method: "DELETE",
+                }
+            );
+
+
+        if (!response.ok) {
+            showMessage(
+                "Could not delete the photo.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        await reloadListing();
+
+
+        /*
+         * If main photo was deleted,
+         * make first remaining photo main.
+         */
+        if (
+            image.is_main &&
+            listing.images.length > 0 &&
+            !listing.images.some(
+                item => item.is_main
+            )
+        ) {
+            const firstImage =
+                listing.images[0];
+
+
+            await window.TernNestAuth.authenticatedFetch(
+                `/api/v1/listings/${listingId}/images/${firstImage.id}/`,
+                {
+                    method: "PATCH",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+                    },
+
+                    body: JSON.stringify({
+                        is_main: true,
+                    }),
+                }
+            );
+
+
+            await reloadListing();
+        }
+    }
+
+
+    function renderStatus() {
+        if (listing.is_active) {
+            statusElement.textContent =
+                "Published";
+
+            statusElement.className =
+                "owner-status owner-status--published";
+
+            statusButton.textContent =
+                "Deactivate";
+
+            statusButton.className =
+                "button button--secondary";
+
+        } else {
+            statusElement.textContent =
+                "Draft";
+
+            statusElement.className =
+                "owner-status owner-status--draft";
+
+            statusButton.textContent =
+                "Publish";
+
+            statusButton.className =
+                "button button--primary";
+        }
+    }
+
+
+    statusButton.addEventListener(
+        "click",
+        async () => {
+            const newStatus =
+                !listing.is_active;
+
+
+            statusButton.disabled = true;
+
+
+            const response =
+                await window.TernNestAuth.authenticatedFetch(
+                    `/api/v1/listings/${listingId}/`,
+                    {
+                        method: "PATCH",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json",
+                        },
+
+                        body: JSON.stringify({
+                            is_active:
+                                newStatus,
+                        }),
+                    }
+                );
+
+
+            let data = null;
+
+            try {
+                data =
+                    await response.json();
+            } catch {
+                data = null;
+            }
+
+
+            statusButton.disabled = false;
+
+
+            if (!response.ok) {
+                showMessage(
+                    formatErrors(data),
+                    "error"
+                );
+
+                return;
+            }
+
+
+            await reloadListing();
+
+
+            showMessage(
+                listing.is_active
+                    ? "Listing published successfully."
+                    : "Listing deactivated successfully.",
+                "success"
+            );
+        }
+    );
+
+
+    deleteButton.addEventListener(
+        "click",
+        async () => {
+            const confirmed =
+                window.confirm(
+                    "Permanently delete this listing? This cannot be undone."
+                );
+
+
+            if (!confirmed) {
+                return;
+            }
+
+
+            const response =
+                await window.TernNestAuth.authenticatedFetch(
+                    `/api/v1/listings/${listingId}/`,
+                    {
+                        method: "DELETE",
+                    }
+                );
+
+
+            if (
+                response.status === 204
+            ) {
+                window.location.href =
+                    "/dashboard/";
+
+                return;
+            }
+
+
+            let data = null;
+
+            try {
+                data =
+                    await response.json();
+            } catch {
+                data = null;
+            }
+
+
+            showMessage(
+                formatErrors(data),
+                "error"
+            );
+        }
+    );
+
+
+    await loadPage();
+});
+</script>
+
+{% endblock %}

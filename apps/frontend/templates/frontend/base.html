@@ -1,0 +1,129 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}TernNest{% endblock %}</title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'frontend/css/styles.css' %}"
+    >
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="container navigation">
+            <a
+                class="brand"
+                href="{% url 'frontend:home' %}"
+            >
+                <span class="brand__mark" aria-hidden="true">
+                    <svg viewBox="0 0 48 48">
+                        <path
+                            d="M7 28C15 27 21 22 25 14C28 21 33 25 41 27C34 29 29 33 26 39C22 34 16 30 7 28Z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="3"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+                </span>
+
+                <span>
+                    <strong class="brand__name">TernNest</strong>
+                    <small class="brand__slogan">Find your next nest</small>
+                </span>
+            </a>
+
+            <nav class="navigation__links">
+                <a
+                    class="navigation__link {% if request.resolver_match.url_name == 'home' %}navigation__link--active{% endif %}"
+                    href="{% url 'frontend:home' %}"
+                >
+                    Explore
+                </a>
+
+                <a
+                    class="navigation__link {% if request.resolver_match.url_name == 'listing-create' %}navigation__link--active{% endif %}"
+                    href="{% url 'frontend:listing-create' %}"
+                >
+                    List your home
+                </a>
+
+                <a
+                    class="navigation__link {% if request.resolver_match.url_name == 'favorites' %}navigation__link--active{% endif %}"
+                    href="{% url 'frontend:favorites' %}"
+                >
+                    <span aria-hidden="true">♡</span>
+                    Favorites
+                </a>
+            </nav>
+
+            <!-- Меню гостя -->
+            <div class="navigation__actions" data-guest-navigation>
+                <a
+                    class="button button--ghost button--small"
+                    href="{% url 'frontend:login' %}"
+                >
+                    Log in
+                </a>
+
+                <a
+                    class="button button--primary button--small"
+                    href="{% url 'frontend:register' %}"
+                >
+                    Sign up
+                </a>
+            </div>
+
+            <!-- Меню авторизованного пользователя.
+                 Сейчас скрыто. Позже его будет включать JavaScript. -->
+            <div
+                class="navigation__actions"
+                data-user-navigation
+                hidden
+            >
+                <a
+                    class="account-link"
+                    href="{% url 'frontend:dashboard' %}"
+                >
+                    <span class="account-link__avatar">TN</span>
+                    <span data-user-name>My account</span>
+                </a>
+
+                <button
+                    class="button button--ghost button--small"
+                    type="button"
+                    data-logout-button
+                >
+                    Log out
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="site-main">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="container site-footer__content">
+            <p>© {% now "Y" %} TernNest</p>
+            <p>Find your next nest.</p>
+        </div>
+    </footer>
+
+    <script
+        src="{% static 'frontend/js/auth.js' %}"
+        defer
+    ></script>
+
+    {% block extra_js %}
+    {% endblock %}
+</body>
+</html>

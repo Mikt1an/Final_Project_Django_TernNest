@@ -1,0 +1,730 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}Find a stay | TernNest{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+    <div class="container hero__content">
+
+        <div class="hero__text">
+            <span class="eyebrow">
+                Your next journey starts here
+            </span>
+
+            <h1>
+                Find a place that<br>
+                feels like home.
+            </h1>
+
+            <p>
+                Discover comfortable apartments,
+                houses and studios for your next trip.
+            </p>
+        </div>
+
+
+        <form
+            class="search-panel"
+            method="get"
+        >
+
+            <label
+                class="
+                    search-panel__field
+                    search-panel__field--destination
+                "
+            >
+                <span>Destination</span>
+
+                <input
+                    type="text"
+                    name="city"
+                    placeholder="Where are you going?"
+                >
+            </label>
+
+
+            <label class="search-panel__field">
+                <span>Check in</span>
+
+                <input
+                    type="date"
+                    name="check_in"
+                >
+            </label>
+
+
+            <label class="search-panel__field">
+                <span>Check out</span>
+
+                <input
+                    type="date"
+                    name="check_out"
+                >
+            </label>
+
+
+            <label class="search-panel__field">
+                <span>Guests</span>
+
+                <input
+                    type="number"
+                    name="guests"
+                    value="1"
+                    min="1"
+                >
+            </label>
+
+
+            <button
+                class="button button--primary"
+                type="submit"
+            >
+                Search
+            </button>
+
+        </form>
+
+    </div>
+</section>
+
+
+<section class="content-section">
+    <div class="container">
+
+        <div class="section-heading">
+
+            <div>
+                <span class="eyebrow">
+                    Available now
+                </span>
+
+                <h2>
+                    Discover your next stay
+                </h2>
+            </div>
+
+            <p>
+                Apartments, houses and studios
+                selected for your journey.
+            </p>
+
+        </div>
+
+
+        <div
+            id="listings-grid"
+            class="listings-grid"
+        >
+
+            <div
+                class="
+                    empty-state
+                    empty-state--wide
+                "
+            >
+                <p>Loading listings...</p>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+
+<style>
+
+.listing-card__image-wrapper {
+    position: relative;
+}
+
+
+.listing-card__favorite {
+    position: absolute;
+
+    top: 12px;
+    right: 12px;
+
+    z-index: 3;
+
+    width: 42px;
+    height: 42px;
+
+    display: grid;
+    place-items: center;
+
+    padding: 0;
+
+    color: #173c34;
+
+    background:
+        rgba(255, 255, 255, 0.92);
+
+    border: 0;
+    border-radius: 50%;
+
+    box-shadow:
+        0 4px 15px
+        rgba(0, 0, 0, 0.15);
+
+    cursor: pointer;
+
+    font-size: 24px;
+    line-height: 1;
+
+    transition:
+        transform 150ms ease,
+        background 150ms ease;
+}
+
+
+.listing-card__favorite:hover {
+    transform: scale(1.08);
+}
+
+
+.listing-card__favorite--active {
+    color: #ee7657;
+}
+
+
+.listing-card__reviews {
+    margin: 0;
+
+    color: var(--color-text-soft);
+
+    font-size: 14px;
+}
+
+
+.listing-card__reviews strong {
+    color: var(--color-text);
+}
+
+</style>
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    async () => {
+
+        const listingsGrid =
+            document.getElementById(
+                "listings-grid"
+            );
+
+
+        /*
+         * GET с JWT, если пользователь вошёл.
+         * Это нужно для is_favorite.
+         */
+
+        async function apiFetch(
+            url,
+            options = {}
+        ) {
+
+            if (
+                window.TernNestAuth
+                && (
+                    window.TernNestAuth
+                        .getAccessToken()
+                    ||
+                    window.TernNestAuth
+                        .getRefreshToken()
+                )
+            ) {
+                return (
+                    window.TernNestAuth
+                    .authenticatedFetch(
+                        url,
+                        options
+                    )
+                );
+            }
+
+            return fetch(
+                url,
+                options
+            );
+        }
+
+
+        function getResults(data) {
+
+            if (Array.isArray(data)) {
+                return data;
+            }
+
+            return data.results || [];
+        }
+
+
+        function ratingText(listing) {
+
+            const count =
+                listing.reviews_count || 0;
+
+            const reviewText =
+                count === 1
+                    ? "1 review"
+                    : `${count} reviews`;
+
+            if (
+                listing.rating === null
+                || listing.rating === undefined
+            ) {
+                return (
+                    `No rating · ${reviewText}`
+                );
+            }
+
+            return (
+                `★ ${Number(
+                    listing.rating
+                ).toFixed(1)} · ${reviewText}`
+            );
+        }
+
+
+        function updateFavoriteButton(
+            button,
+            listing
+        ) {
+
+            button.textContent =
+                listing.is_favorite
+                    ? "♥"
+                    : "♡";
+
+            button.classList.toggle(
+                "listing-card__favorite--active",
+                listing.is_favorite
+            );
+
+            button.title =
+                listing.is_favorite
+                    ? "Remove from favorites"
+                    : "Add to favorites";
+        }
+
+
+        async function toggleFavorite(
+            listing,
+            button
+        ) {
+
+            const auth =
+                window.TernNestAuth;
+
+
+            if (
+                !auth
+                ||
+                (
+                    !auth.getAccessToken()
+                    &&
+                    !auth.getRefreshToken()
+                )
+            ) {
+
+                window.location.href =
+                    `/login/?next=${encodeURIComponent(
+                        window.location.pathname
+                    )}`;
+
+                return;
+            }
+
+
+            button.disabled = true;
+
+
+            try {
+
+                if (
+                    listing.is_favorite
+                    && listing.favorite_id
+                ) {
+
+                    const response =
+                        await auth
+                            .authenticatedFetch(
+                                `/api/v1/listings/favorites/${listing.favorite_id}/`,
+                                {
+                                    method: "DELETE",
+                                }
+                            );
+
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "Could not remove favorite."
+                        );
+                    }
+
+
+                    listing.is_favorite =
+                        false;
+
+                    listing.favorite_id =
+                        null;
+
+                } else {
+
+                    const response =
+                        await auth
+                            .authenticatedFetch(
+                                "/api/v1/listings/favorites/",
+                                {
+                                    method: "POST",
+
+                                    headers: {
+                                        "Content-Type":
+                                            "application/json",
+                                    },
+
+                                    body: JSON.stringify(
+                                        {
+                                            listing:
+                                                listing.id,
+                                        }
+                                    ),
+                                }
+                            );
+
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "Could not add favorite."
+                        );
+                    }
+
+
+                    const favorite =
+                        await response.json();
+
+
+                    listing.is_favorite =
+                        true;
+
+                    listing.favorite_id =
+                        favorite.id;
+                }
+
+
+                updateFavoriteButton(
+                    button,
+                    listing
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Favorite error:",
+                    error
+                );
+
+            } finally {
+
+                button.disabled = false;
+
+            }
+        }
+
+
+        try {
+
+            const response =
+                await apiFetch(
+                    "/api/v1/listings/"
+                );
+
+
+            if (!response.ok) {
+                throw new Error(
+                    `HTTP ${response.status}`
+                );
+            }
+
+
+            const data =
+                await response.json();
+
+            const listings =
+                getResults(data).filter(
+                    listing => listing.is_active
+                );
+
+
+            listingsGrid.innerHTML = "";
+
+
+            if (
+                listings.length === 0
+            ) {
+
+                listingsGrid.innerHTML = `
+                    <div
+                        class="
+                            empty-state
+                            empty-state--wide
+                        "
+                    >
+                        <h3>
+                            No listings available
+                        </h3>
+                    </div>
+                `;
+
+                return;
+            }
+
+
+            listings.forEach(
+                listing => {
+
+                    const card =
+                        document
+                            .createElement(
+                                "article"
+                            );
+
+
+                    card.className =
+                        "listing-card";
+
+                    card.tabIndex = 0;
+
+                    card.setAttribute(
+                        "role",
+                        "link"
+                    );
+
+
+                    let imageUrl = "";
+
+
+                    if (
+                        listing.images
+                        && listing.images.length
+                    ) {
+
+                        const mainImage =
+                            listing.images.find(
+                                image =>
+                                    image.is_main
+                            )
+                            ||
+                            listing.images[0];
+
+
+                        imageUrl =
+                            mainImage.image;
+                    }
+
+
+                    card.innerHTML = `
+
+                        <div
+                            class="
+                                listing-card__image-wrapper
+                            "
+                        >
+
+                            ${
+                                imageUrl
+                                    ? `
+                                        <img
+                                            src="${imageUrl}"
+                                            alt="${listing.title}"
+                                            class="
+                                                listing-card__image
+                                            "
+                                        >
+                                    `
+                                    : `
+                                        <div
+                                            class="
+                                                listing-card__placeholder
+                                            "
+                                        >
+                                            No image
+                                        </div>
+                                    `
+                            }
+
+
+                            <button
+                                type="button"
+                                class="
+                                    listing-card__favorite
+                                "
+                                aria-label="
+                                    Toggle favorite
+                                "
+                            ></button>
+
+                        </div>
+
+
+                        <div
+                            class="
+                                listing-card__content
+                            "
+                        >
+
+                            <div
+                                class="
+                                    listing-card__header
+                                "
+                            >
+                                <h3>
+                                    ${listing.title}
+                                </h3>
+                            </div>
+
+
+                            <p
+                                class="
+                                    listing-card__location
+                                "
+                            >
+                                ${listing.city},
+                                ${listing.country}
+                            </p>
+
+
+                            <p
+                                class="
+                                    listing-card__reviews
+                                "
+                            >
+                                <strong>
+                                    ${ratingText(
+                                        listing
+                                    )}
+                                </strong>
+                            </p>
+
+
+                            <p
+                                class="
+                                    listing-card__details
+                                "
+                            >
+                                ${listing.max_guests}
+                                guests ·
+                                ${listing.bedrooms}
+                                bedrooms ·
+                                ${listing.beds}
+                                beds
+                            </p>
+
+
+                            <p
+                                class="
+                                    listing-card__price
+                                "
+                            >
+                                <strong>
+                                    €${listing.price_per_night}
+                                </strong>
+
+                                <span>
+                                    / night
+                                </span>
+                            </p>
+
+                        </div>
+                    `;
+
+
+                    const favoriteButton =
+                        card.querySelector(
+                            ".listing-card__favorite"
+                        );
+
+
+                    updateFavoriteButton(
+                        favoriteButton,
+                        listing
+                    );
+
+
+                    favoriteButton
+                        .addEventListener(
+                            "click",
+                            async event => {
+
+                                event.stopPropagation();
+
+                                await toggleFavorite(
+                                    listing,
+                                    favoriteButton
+                                );
+                            }
+                        );
+
+
+                    card.addEventListener(
+                        "click",
+                        () => {
+
+                            window.location.href =
+                                `/listings/${listing.id}/`;
+                        }
+                    );
+
+
+                    card.addEventListener(
+                        "keydown",
+                        event => {
+
+                            if (
+                                event.key === "Enter"
+                            ) {
+                                window.location.href =
+                                    `/listings/${listing.id}/`;
+                            }
+                        }
+                    );
+
+
+                    listingsGrid
+                        .appendChild(card);
+                }
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Failed to load listings:",
+                error
+            );
+
+
+            listingsGrid.innerHTML = `
+                <div
+                    class="
+                        empty-state
+                        empty-state--wide
+                    "
+                >
+                    <h3>
+                        Failed to load listings
+                    </h3>
+                </div>
+            `;
+        }
+    }
+);
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,1808 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}Listing | TernNest{% endblock %}
+
+{% block content %}
+
+<section class="content-section">
+    <div class="container">
+        <div id="listing-detail">
+            <div class="empty-state">
+                <p>Loading listing...</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<style>
+    /* =========================================================
+       Listing header
+       ========================================================= */
+
+    .listing-detail__top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    .listing-detail__top h1 {
+        margin-bottom: 8px;
+    }
+
+    .listing-detail__meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        color: var(--color-text-soft);
+    }
+
+    .listing-detail__rating-link {
+        padding: 0;
+        color: var(--color-text);
+        background: transparent;
+        border: 0;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .listing-detail__rating-link:hover {
+        color: var(--color-primary);
+    }
+
+    .listing-detail__favorite {
+        min-width: 125px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 18px;
+        color: var(--color-text);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 750;
+        transition:
+            transform 150ms ease,
+            border-color 150ms ease,
+            box-shadow 150ms ease;
+    }
+
+    .listing-detail__favorite:hover {
+        transform: translateY(-1px);
+        border-color: var(--color-primary);
+        box-shadow:
+            0 6px 18px
+            rgba(31, 64, 55, 0.10);
+    }
+
+    .listing-detail__favorite--active {
+        color: #d8583d;
+    }
+
+
+    /* =========================================================
+       Booking
+       ========================================================= */
+
+    .booking-summary {
+        padding: 14px;
+        background: #f4f7f5;
+        border-radius: 12px;
+    }
+
+    .booking-summary p {
+        margin: 3px 0;
+    }
+
+
+    /* =========================================================
+       Reviews
+       ========================================================= */
+
+    .reviews-section {
+        margin-top: 64px;
+        padding-top: 40px;
+        border-top: 1px solid var(--color-border);
+    }
+
+    .reviews-section__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 24px;
+        margin-bottom: 28px;
+    }
+
+    .reviews-section__header h2 {
+        margin: 4px 0 0;
+    }
+
+    .reviews-summary {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        white-space: nowrap;
+    }
+
+    .reviews-summary__rating {
+        color: var(--color-text);
+        font-size: 22px;
+        font-weight: 800;
+    }
+
+    .reviews-summary__count {
+        color: var(--color-text-soft);
+    }
+
+    .reviews-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .review-card {
+        padding: 22px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--border-radius);
+        box-shadow:
+            0 8px 24px
+            rgba(31, 64, 55, 0.07);
+    }
+
+    .review-card__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 18px;
+    }
+
+    .review-card__guest {
+        margin: 0 0 4px;
+        font-weight: 800;
+    }
+
+    .review-card__date {
+        margin: 0;
+        color: var(--color-text-soft);
+        font-size: 13px;
+    }
+
+    .review-card__stars {
+        white-space: nowrap;
+        color: #d79a25;
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+
+    .review-card__no-rating {
+        color: var(--color-text-soft);
+        font-size: 13px;
+    }
+
+    .review-card__block {
+        margin-top: 16px;
+    }
+
+    .review-card__block:first-of-type {
+        margin-top: 0;
+    }
+
+    .review-card__block h4 {
+        margin: 0 0 6px;
+        font-size: 14px;
+    }
+
+    .review-card__block p {
+        margin: 0;
+        line-height: 1.65;
+    }
+
+    .review-card__images {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 18px;
+    }
+
+    .review-card__images img {
+        width: 95px;
+        height: 75px;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+
+    .reviews-empty {
+        grid-column: 1 / -1;
+    }
+
+
+    /* =========================================================
+       Responsive
+       ========================================================= */
+
+    @media (max-width: 760px) {
+        .listing-detail__top {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .listing-detail__favorite {
+            width: 100%;
+        }
+
+        .reviews-section__header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .reviews-list {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    const listingId = {{ listing_id }};
+    const container = document.getElementById("listing-detail");
+
+    let currentListing = null;
+
+
+    /* =========================================================
+       Helpers
+       ========================================================= */
+
+    async function apiFetch(url, options = {}) {
+        if (
+            window.TernNestAuth &&
+            (
+                window.TernNestAuth.getAccessToken() ||
+                window.TernNestAuth.getRefreshToken()
+            )
+        ) {
+            return window.TernNestAuth.authenticatedFetch(
+                url,
+                options
+            );
+        }
+
+        return fetch(url, options);
+    }
+
+
+    function getResults(data) {
+        if (Array.isArray(data)) {
+            return data;
+        }
+
+        return data.results || [];
+    }
+
+
+    function escapeHtml(value) {
+        if (
+            value === null ||
+            value === undefined
+        ) {
+            return "";
+        }
+
+        const element = document.createElement("div");
+        element.textContent = String(value);
+
+        return element.innerHTML;
+    }
+
+
+    function formatTime(value, fallback) {
+        if (!value) {
+            return fallback;
+        }
+
+        return value.slice(0, 5);
+    }
+
+
+    function localDateString(date) {
+        const year = date.getFullYear();
+
+        const month = String(
+            date.getMonth() + 1
+        ).padStart(2, "0");
+
+        const day = String(
+            date.getDate()
+        ).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
+    }
+
+
+    function addDays(dateString, days) {
+        const date = new Date(
+            `${dateString}T12:00:00`
+        );
+
+        date.setDate(
+            date.getDate() + days
+        );
+
+        return localDateString(date);
+    }
+
+
+    function calculateNights(
+        checkInDate,
+        checkOutDate
+    ) {
+        if (
+            !checkInDate ||
+            !checkOutDate
+        ) {
+            return 0;
+        }
+
+        const start = new Date(
+            `${checkInDate}T12:00:00`
+        );
+
+        const end = new Date(
+            `${checkOutDate}T12:00:00`
+        );
+
+        const difference = end - start;
+
+        return Math.round(
+            difference /
+            (
+                1000 *
+                60 *
+                60 *
+                24
+            )
+        );
+    }
+
+
+    function formatDate(value) {
+        if (!value) {
+            return "";
+        }
+
+        const date = new Date(value);
+
+        return new Intl.DateTimeFormat(
+            "en-GB",
+            {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            }
+        ).format(date);
+    }
+
+
+    function formatApiErrors(data) {
+        if (!data) {
+            return "Unable to complete request.";
+        }
+
+        if (typeof data === "string") {
+            return data;
+        }
+
+        if (data.detail) {
+            return data.detail;
+        }
+
+        const messages = [];
+
+        Object.entries(data).forEach(
+            ([field, errors]) => {
+                const values = Array.isArray(errors)
+                    ? errors
+                    : [errors];
+
+                values.forEach(error => {
+                    if (
+                        typeof error === "string"
+                    ) {
+                        messages.push(error);
+                    }
+                });
+            }
+        );
+
+        return (
+            messages.join(" ") ||
+            "Unable to complete request."
+        );
+    }
+
+
+    function getGuestName(guest) {
+        if (!guest) {
+            return "Guest";
+        }
+
+        const fullName = [
+            guest.first_name,
+            guest.last_name,
+        ]
+            .filter(Boolean)
+            .join(" ");
+
+        return fullName || "Guest";
+    }
+
+
+    function starsHtml(rating) {
+        if (
+            rating === null ||
+            rating === undefined
+        ) {
+            return `
+                <span class="review-card__no-rating">
+                    No rating
+                </span>
+            `;
+        }
+
+        const numericRating =
+            Math.max(
+                1,
+                Math.min(
+                    5,
+                    Number(rating)
+                )
+            );
+
+        const fullStars =
+            "★".repeat(numericRating);
+
+        const emptyStars =
+            "☆".repeat(
+                5 - numericRating
+            );
+
+        return `
+            <span
+                class="review-card__stars"
+                aria-label="${numericRating} out of 5"
+            >
+                ${fullStars}${emptyStars}
+            </span>
+        `;
+    }
+
+
+    function listingRatingText(listing) {
+        const count =
+            listing.reviews_count || 0;
+
+        const reviewsText =
+            count === 1
+                ? "1 review"
+                : `${count} reviews`;
+
+        if (
+            listing.rating === null ||
+            listing.rating === undefined
+        ) {
+            return `No rating · ${reviewsText}`;
+        }
+
+        return (
+            `★ ${Number(
+                listing.rating
+            ).toFixed(1)} · ${reviewsText}`
+        );
+    }
+
+
+    /* =========================================================
+       Render listing
+       ========================================================= */
+
+    function renderListing(listing) {
+        const images =
+            listing.images || [];
+
+        const imagesHtml =
+            images.length > 0
+                ? `
+                    <div class="listing-detail__gallery">
+                        ${images.map(
+                            image => `
+                                <img
+                                    src="${escapeHtml(image.image)}"
+                                    alt="${escapeHtml(listing.title)}"
+                                    class="listing-detail__image"
+                                >
+                            `
+                        ).join("")}
+                    </div>
+                `
+                : "";
+
+
+        const amenities =
+            listing.amenities || [];
+
+        const amenitiesHtml =
+            amenities.length > 0
+                ? `
+                    <section>
+                        <h2>Amenities</h2>
+
+                        <p>
+                            ${amenities.map(
+                                amenity =>
+                                    escapeHtml(
+                                        amenity.name
+                                    )
+                            ).join(" · ")}
+                        </p>
+                    </section>
+                `
+                : "";
+
+
+        const checkInTime =
+            formatTime(
+                listing.earliest_check_in_time,
+                "15:00"
+            );
+
+        const checkOutTime =
+            formatTime(
+                listing.latest_check_out_time,
+                "11:00"
+            );
+
+
+        container.innerHTML = `
+            <div class="listing-detail">
+
+                <div class="listing-detail__top">
+
+                    <div>
+                        <span class="eyebrow">
+                            ${escapeHtml(
+                                listing.listing_type
+                            )}
+                        </span>
+
+                        <h1>
+                            ${escapeHtml(
+                                listing.title
+                            )}
+                        </h1>
+
+                        <p class="listing-detail__meta">
+                            <span>
+                                ${escapeHtml(
+                                    listing.city
+                                )},
+                                ${escapeHtml(
+                                    listing.country
+                                )}
+                            </span>
+
+                            <span>·</span>
+
+                            <button
+                                type="button"
+                                id="listing-rating-button"
+                                class="listing-detail__rating-link"
+                            >
+                                ${listingRatingText(
+                                    listing
+                                )}
+                            </button>
+                        </p>
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="listing-favorite-button"
+                        class="listing-detail__favorite"
+                    ></button>
+
+                </div>
+
+
+                ${imagesHtml}
+
+
+                <div class="listing-detail__body">
+
+                    <div>
+
+                        <section>
+                            <h2>
+                                About this place
+                            </h2>
+
+                            <p>
+                                ${escapeHtml(
+                                    listing.description
+                                )}
+                            </p>
+                        </section>
+
+
+                        <section>
+                            <h2>
+                                Property details
+                            </h2>
+
+                            <p>
+                                ${listing.max_guests}
+                                guests ·
+
+                                ${listing.bedrooms}
+                                bedrooms ·
+
+                                ${listing.beds}
+                                beds ·
+
+                                ${listing.bathrooms}
+                                bathrooms
+                            </p>
+                        </section>
+
+
+                        ${amenitiesHtml}
+
+
+                        <section>
+                            <h2>
+                                Location
+                            </h2>
+
+                            <p>
+                                ${escapeHtml(
+                                    listing.address
+                                )},
+                                ${escapeHtml(
+                                    listing.city
+                                )},
+                                ${escapeHtml(
+                                    listing.country
+                                )}
+                            </p>
+                        </section>
+
+                    </div>
+
+
+                    <aside class="listing-detail__booking">
+
+                        <p>
+                            <strong>
+                                €${listing.price_per_night}
+                            </strong>
+
+                            / night
+                        </p>
+
+
+                        <form
+                            id="booking-form"
+                            class="form-stack"
+                        >
+
+                            <label class="form-field">
+                                <span>
+                                    Check in
+                                </span>
+
+                                <input
+                                    type="date"
+                                    id="booking-check-in-date"
+                                    required
+                                >
+                            </label>
+
+
+                            <label class="form-field">
+                                <span>
+                                    Check-in time
+                                </span>
+
+                                <input
+                                    type="time"
+                                    id="booking-check-in-time"
+                                    value="${checkInTime}"
+                                    required
+                                >
+                            </label>
+
+
+                            <label class="form-field">
+                                <span>
+                                    Check out
+                                </span>
+
+                                <input
+                                    type="date"
+                                    id="booking-check-out-date"
+                                    required
+                                >
+                            </label>
+
+
+                            <label class="form-field">
+                                <span>
+                                    Check-out time
+                                </span>
+
+                                <input
+                                    type="time"
+                                    id="booking-check-out-time"
+                                    value="${checkOutTime}"
+                                    required
+                                >
+                            </label>
+
+
+                            <label class="form-field">
+                                <span>
+                                    Guests
+                                </span>
+
+                                <input
+                                    type="number"
+                                    id="booking-guests"
+                                    value="1"
+                                    min="1"
+                                    max="${listing.max_guests}"
+                                    required
+                                >
+                            </label>
+
+
+                            <div
+                                id="booking-summary"
+                                class="booking-summary"
+                                hidden
+                            >
+                                <p>
+                                    <strong>
+                                        <span id="booking-nights">
+                                            0
+                                        </span>
+                                        nights
+                                    </strong>
+                                </p>
+
+                                <p>
+                                    Total:
+
+                                    <strong id="booking-total">
+                                        €0.00
+                                    </strong>
+                                </p>
+                            </div>
+
+
+                            <div
+                                id="booking-message"
+                                hidden
+                            ></div>
+
+
+                            <button
+                                type="submit"
+                                id="reserve-button"
+                                class="button button--primary button--full"
+                            >
+                                Reserve
+                            </button>
+
+                        </form>
+
+                    </aside>
+
+                </div>
+
+
+                <section
+                    id="reviews-section"
+                    class="reviews-section"
+                >
+
+                    <div class="reviews-section__header">
+
+                        <div>
+                            <span class="eyebrow">
+                                Guest experiences
+                            </span>
+
+                            <h2>
+                                Reviews
+                            </h2>
+                        </div>
+
+
+                        <div class="reviews-summary">
+
+                            <span
+                                id="reviews-summary-rating"
+                                class="reviews-summary__rating"
+                            >
+                                ${
+                                    listing.rating !== null &&
+                                    listing.rating !== undefined
+                                        ? (
+                                            `★ ${Number(
+                                                listing.rating
+                                            ).toFixed(1)}`
+                                        )
+                                        : "No rating"
+                                }
+                            </span>
+
+
+                            <span
+                                id="reviews-summary-count"
+                                class="reviews-summary__count"
+                            >
+                                ${
+                                    listing.reviews_count || 0
+                                }
+
+                                ${
+                                    (
+                                        listing.reviews_count || 0
+                                    ) === 1
+                                        ? "review"
+                                        : "reviews"
+                                }
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="reviews-list"
+                        class="reviews-list"
+                    >
+                        <div
+                            class="empty-state reviews-empty"
+                        >
+                            <p>
+                                Loading reviews...
+                            </p>
+                        </div>
+                    </div>
+
+                </section>
+
+            </div>
+        `;
+
+
+        setupFavorite(listing);
+        setupRatingScroll();
+        setupBooking(listing);
+    }
+
+
+    /* =========================================================
+       Rating scroll
+       ========================================================= */
+
+    function setupRatingScroll() {
+        const button =
+            document.getElementById(
+                "listing-rating-button"
+            );
+
+        const reviewsSection =
+            document.getElementById(
+                "reviews-section"
+            );
+
+        if (
+            !button ||
+            !reviewsSection
+        ) {
+            return;
+        }
+
+        button.addEventListener(
+            "click",
+            () => {
+                reviewsSection.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                });
+            }
+        );
+    }
+
+
+    /* =========================================================
+       Favorites
+       ========================================================= */
+
+    function updateFavoriteButton(listing) {
+        const button =
+            document.getElementById(
+                "listing-favorite-button"
+            );
+
+        if (!button) {
+            return;
+        }
+
+        if (listing.is_favorite) {
+            button.textContent =
+                "♥ Saved";
+
+            button.classList.add(
+                "listing-detail__favorite--active"
+            );
+
+            button.title =
+                "Remove from favorites";
+
+        } else {
+            button.textContent =
+                "♡ Save";
+
+            button.classList.remove(
+                "listing-detail__favorite--active"
+            );
+
+            button.title =
+                "Add to favorites";
+        }
+    }
+
+
+    function setupFavorite(listing) {
+        const button =
+            document.getElementById(
+                "listing-favorite-button"
+            );
+
+        if (!button) {
+            return;
+        }
+
+        updateFavoriteButton(listing);
+
+
+        button.addEventListener(
+            "click",
+            async () => {
+                const auth =
+                    window.TernNestAuth;
+
+                if (
+                    !auth ||
+                    (
+                        !auth.getAccessToken() &&
+                        !auth.getRefreshToken()
+                    )
+                ) {
+                    window.location.href =
+                        "/login/?next=" +
+                        encodeURIComponent(
+                            window.location.pathname
+                        );
+
+                    return;
+                }
+
+
+                button.disabled = true;
+
+
+                try {
+                    if (
+                        listing.is_favorite &&
+                        listing.favorite_id
+                    ) {
+                        const response =
+                            await auth.authenticatedFetch(
+                                `/api/v1/listings/favorites/${listing.favorite_id}/`,
+                                {
+                                    method: "DELETE",
+                                }
+                            );
+
+
+                        if (!response.ok) {
+                            throw new Error(
+                                "Could not remove this listing from favorites."
+                            );
+                        }
+
+
+                        listing.is_favorite =
+                            false;
+
+                        listing.favorite_id =
+                            null;
+
+                    } else {
+                        const response =
+                            await auth.authenticatedFetch(
+                                "/api/v1/listings/favorites/",
+                                {
+                                    method: "POST",
+
+                                    headers: {
+                                        "Content-Type":
+                                            "application/json",
+                                    },
+
+                                    body: JSON.stringify({
+                                        listing:
+                                            listing.id,
+                                    }),
+                                }
+                            );
+
+
+                        let data = null;
+
+                        try {
+                            data =
+                                await response.json();
+                        } catch {
+                            data = null;
+                        }
+
+
+                        if (!response.ok) {
+                            throw new Error(
+                                formatApiErrors(data)
+                            );
+                        }
+
+
+                        listing.is_favorite =
+                            true;
+
+                        listing.favorite_id =
+                            data.id;
+                    }
+
+
+                    updateFavoriteButton(
+                        listing
+                    );
+
+                } catch (error) {
+                    console.error(
+                        "Favorite error:",
+                        error
+                    );
+
+                    alert(
+                        error.message
+                    );
+
+                } finally {
+                    button.disabled =
+                        false;
+                }
+            }
+        );
+    }
+
+
+    /* =========================================================
+       Reviews
+       ========================================================= */
+
+    async function loadReviews() {
+        const reviewsList =
+            document.getElementById(
+                "reviews-list"
+            );
+
+        if (!reviewsList) {
+            return;
+        }
+
+
+        try {
+            const response =
+                await fetch(
+                    `/api/v1/reviews/?listing=${listingId}`
+                );
+
+
+            if (!response.ok) {
+                throw new Error(
+                    `Reviews HTTP ${response.status}`
+                );
+            }
+
+
+            const data =
+                await response.json();
+
+            const reviews =
+                getResults(data);
+
+
+            renderReviews(reviews);
+
+        } catch (error) {
+            console.error(
+                "Reviews loading error:",
+                error
+            );
+
+
+            reviewsList.innerHTML = `
+                <div
+                    class="empty-state reviews-empty"
+                >
+                    <h3>
+                        Unable to load reviews
+                    </h3>
+
+                    <p>
+                        The listing is available,
+                        but its reviews could not
+                        be loaded.
+                    </p>
+                </div>
+            `;
+        }
+    }
+
+
+    function renderReviews(reviews) {
+        const reviewsList =
+            document.getElementById(
+                "reviews-list"
+            );
+
+        if (!reviewsList) {
+            return;
+        }
+
+
+        if (reviews.length === 0) {
+            reviewsList.innerHTML = `
+                <div
+                    class="empty-state reviews-empty"
+                >
+                    <div class="empty-state__icon">
+                        ★
+                    </div>
+
+                    <h3>
+                        No reviews yet
+                    </h3>
+
+                    <p>
+                        This property has not
+                        received any guest
+                        reviews yet.
+                    </p>
+                </div>
+            `;
+
+            return;
+        }
+
+
+        reviewsList.innerHTML = "";
+
+
+        reviews.forEach(review => {
+            const guestName =
+                getGuestName(
+                    review.guest
+                );
+
+
+            const likedHtml =
+                review.liked
+                    ? `
+                        <div class="review-card__block">
+                            <h4>
+                                What they liked
+                            </h4>
+
+                            <p>
+                                ${escapeHtml(
+                                    review.liked
+                                )}
+                            </p>
+                        </div>
+                    `
+                    : "";
+
+
+            const dislikedHtml =
+                review.disliked
+                    ? `
+                        <div class="review-card__block">
+                            <h4>
+                                What could be better
+                            </h4>
+
+                            <p>
+                                ${escapeHtml(
+                                    review.disliked
+                                )}
+                            </p>
+                        </div>
+                    `
+                    : "";
+
+
+            const images =
+                review.images || [];
+
+
+            const imagesHtml =
+                images.length > 0
+                    ? `
+                        <div class="review-card__images">
+                            ${images.map(
+                                image => `
+                                    <img
+                                        src="${escapeHtml(
+                                            image.image
+                                        )}"
+                                        alt="Review photo"
+                                    >
+                                `
+                            ).join("")}
+                        </div>
+                    `
+                    : "";
+
+
+            const card =
+                document.createElement(
+                    "article"
+                );
+
+            card.className =
+                "review-card";
+
+
+            card.innerHTML = `
+                <div class="review-card__header">
+
+                    <div>
+                        <p class="review-card__guest">
+                            ${escapeHtml(
+                                guestName
+                            )}
+                        </p>
+
+                        <p class="review-card__date">
+                            ${formatDate(
+                                review.created_at
+                            )}
+                        </p>
+                    </div>
+
+
+                    ${starsHtml(
+                        review.rating
+                    )}
+
+                </div>
+
+
+                ${likedHtml}
+
+                ${dislikedHtml}
+
+                ${imagesHtml}
+            `;
+
+
+            reviewsList.appendChild(
+                card
+            );
+        });
+    }
+
+
+    /* =========================================================
+       Booking
+       ========================================================= */
+
+    function setupBooking(listing) {
+        const form =
+            document.getElementById(
+                "booking-form"
+            );
+
+        const checkInDateInput =
+            document.getElementById(
+                "booking-check-in-date"
+            );
+
+        const checkInTimeInput =
+            document.getElementById(
+                "booking-check-in-time"
+            );
+
+        const checkOutDateInput =
+            document.getElementById(
+                "booking-check-out-date"
+            );
+
+        const checkOutTimeInput =
+            document.getElementById(
+                "booking-check-out-time"
+            );
+
+        const guestsInput =
+            document.getElementById(
+                "booking-guests"
+            );
+
+        const summary =
+            document.getElementById(
+                "booking-summary"
+            );
+
+        const nightsElement =
+            document.getElementById(
+                "booking-nights"
+            );
+
+        const totalElement =
+            document.getElementById(
+                "booking-total"
+            );
+
+        const message =
+            document.getElementById(
+                "booking-message"
+            );
+
+        const reserveButton =
+            document.getElementById(
+                "reserve-button"
+            );
+
+
+        if (
+            !form ||
+            !checkInDateInput ||
+            !checkInTimeInput ||
+            !checkOutDateInput ||
+            !checkOutTimeInput ||
+            !guestsInput ||
+            !summary ||
+            !nightsElement ||
+            !totalElement ||
+            !message ||
+            !reserveButton
+        ) {
+            console.error(
+                "Booking form elements were not found."
+            );
+
+            return;
+        }
+
+
+        const today =
+            localDateString(
+                new Date()
+            );
+
+
+        checkInDateInput.min =
+            today;
+
+        checkOutDateInput.min =
+            addDays(
+                today,
+                1
+            );
+
+
+        function updateSummary() {
+            const checkIn =
+                checkInDateInput.value;
+
+            const checkOut =
+                checkOutDateInput.value;
+
+
+            if (checkIn) {
+                const minimumCheckOut =
+                    addDays(
+                        checkIn,
+                        1
+                    );
+
+                checkOutDateInput.min =
+                    minimumCheckOut;
+
+
+                if (
+                    checkOut &&
+                    checkOut < minimumCheckOut
+                ) {
+                    checkOutDateInput.value =
+                        minimumCheckOut;
+                }
+            }
+
+
+            const nights =
+                calculateNights(
+                    checkInDateInput.value,
+                    checkOutDateInput.value
+                );
+
+
+            if (nights < 1) {
+                summary.hidden =
+                    true;
+
+                return;
+            }
+
+
+            const total =
+                Number(
+                    listing.price_per_night
+                ) * nights;
+
+
+            nightsElement.textContent =
+                nights;
+
+            totalElement.textContent =
+                `€${total.toFixed(2)}`;
+
+            summary.hidden =
+                false;
+        }
+
+
+        checkInDateInput.addEventListener(
+            "change",
+            updateSummary
+        );
+
+        checkOutDateInput.addEventListener(
+            "change",
+            updateSummary
+        );
+
+
+        form.addEventListener(
+            "submit",
+            async event => {
+                event.preventDefault();
+
+
+                message.hidden =
+                    true;
+
+                message.textContent =
+                    "";
+
+                reserveButton.disabled =
+                    true;
+
+                reserveButton.textContent =
+                    "Booking...";
+
+
+                try {
+                    const auth =
+                        window.TernNestAuth;
+
+
+                    if (
+                        !auth ||
+                        !auth.authenticatedFetch
+                    ) {
+                        throw new Error(
+                            "Authentication system is not available."
+                        );
+                    }
+
+
+                    const accessToken =
+                        auth.getAccessToken();
+
+                    const refreshToken =
+                        auth.getRefreshToken();
+
+
+                    if (
+                        !accessToken &&
+                        !refreshToken
+                    ) {
+                        window.location.href =
+                            "/login/?next=" +
+                            encodeURIComponent(
+                                window.location.pathname
+                            );
+
+                        return;
+                    }
+
+
+                    const checkInDate =
+                        checkInDateInput.value;
+
+                    const checkInTime =
+                        checkInTimeInput.value;
+
+                    const checkOutDate =
+                        checkOutDateInput.value;
+
+                    const checkOutTime =
+                        checkOutTimeInput.value;
+
+
+                    const nights =
+                        calculateNights(
+                            checkInDate,
+                            checkOutDate
+                        );
+
+
+                    if (nights < 1) {
+                        throw new Error(
+                            "Check-out must be at least one day after check-in."
+                        );
+                    }
+
+
+                    const bookingResponse =
+                        await auth.authenticatedFetch(
+                            "/api/v1/bookings/",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json",
+                                },
+
+                                body: JSON.stringify({
+                                    listing:
+                                        listingId,
+
+                                    check_in:
+                                        `${checkInDate}T${checkInTime}:00`,
+
+                                    check_out:
+                                        `${checkOutDate}T${checkOutTime}:00`,
+
+                                    guests:
+                                        Number(
+                                            guestsInput.value
+                                        ),
+                                }),
+                            }
+                        );
+
+
+                    let result = null;
+
+                    try {
+                        result =
+                            await bookingResponse.json();
+                    } catch {
+                        result = null;
+                    }
+
+
+                    if (!bookingResponse.ok) {
+                        if (
+                            bookingResponse.status === 401
+                        ) {
+                            auth.clearTokens();
+
+                            throw new Error(
+                                "Your login session has expired. Please log in again."
+                            );
+                        }
+
+
+                        throw new Error(
+                            formatApiErrors(
+                                result
+                            )
+                        );
+                    }
+
+
+                    message.hidden =
+                        false;
+
+                    message.className =
+                        "form-message form-message--success";
+
+
+                    message.innerHTML = `
+                        Booking created successfully.
+                        <br>
+
+                        Status:
+                        <strong>
+                            ${escapeHtml(
+                                result.status
+                            )}
+                        </strong>
+
+                        <br>
+
+                        ${result.book_days}
+                        nights ·
+                        €${result.total_price}
+                    `;
+
+
+                    reserveButton.textContent =
+                        "Booking created";
+
+                    reserveButton.disabled =
+                        true;
+
+                    checkInDateInput.disabled =
+                        true;
+
+                    checkInTimeInput.disabled =
+                        true;
+
+                    checkOutDateInput.disabled =
+                        true;
+
+                    checkOutTimeInput.disabled =
+                        true;
+
+                    guestsInput.disabled =
+                        true;
+
+                } catch (error) {
+                    console.error(
+                        "Booking error:",
+                        error
+                    );
+
+
+                    message.hidden =
+                        false;
+
+                    message.className =
+                        "form-message form-message--error";
+
+                    message.textContent =
+                        error.message;
+
+
+                    reserveButton.disabled =
+                        false;
+
+                    reserveButton.textContent =
+                        "Reserve";
+                }
+            }
+        );
+    }
+
+
+    /* =========================================================
+       Initial loading
+       ========================================================= */
+
+    try {
+        const response =
+            await apiFetch(
+                `/api/v1/listings/${listingId}/`
+            );
+
+
+        if (!response.ok) {
+            throw new Error(
+                `Listing HTTP ${response.status}`
+            );
+        }
+
+
+        currentListing =
+            await response.json();
+
+    } catch (error) {
+        console.error(
+            "Failed to load listing:",
+            error
+        );
+
+
+        container.innerHTML = `
+            <div class="empty-state">
+                <h2>
+                    Unable to load listing
+                </h2>
+
+                <p>
+                    This property could not
+                    be loaded.
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+
+    /*
+     * Отдельно рендерим страницу.
+     * Ошибка Reviews теперь не сможет
+     * удалить сам Listing.
+     */
+
+    try {
+        renderListing(
+            currentListing
+        );
+    } catch (error) {
+        console.error(
+            "Listing render error:",
+            error
+        );
+
+        container.innerHTML = `
+            <div class="empty-state">
+                <h2>
+                    Unable to display listing
+                </h2>
+
+                <p>
+                    The property was loaded,
+                    but the page could not
+                    be rendered.
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+
+    /*
+     * Reviews загружаются независимо.
+     */
+
+    await loadReviews();
+});
+
+</script>
+
+{% endblock %}

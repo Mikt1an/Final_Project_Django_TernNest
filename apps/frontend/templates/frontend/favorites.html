@@ -1,0 +1,624 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}Favorites | TernNest{% endblock %}
+
+{% block content %}
+
+<section class="page-heading">
+    <div class="container">
+        <span class="eyebrow">Saved homes</span>
+
+        <h1>Favorites</h1>
+
+        <p>
+            Properties you saved for later.
+        </p>
+    </div>
+</section>
+
+
+<section class="content-section content-section--compact">
+    <div class="container">
+
+        <div
+            id="favorites-grid"
+            class="listings-grid"
+        >
+            <div class="empty-state empty-state--wide">
+                <p>Loading favorites...</p>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+<style>
+
+.listing-card__image-wrapper {
+    position: relative;
+}
+
+
+.listing-card__favorite {
+    position: absolute;
+
+    top: 12px;
+    right: 12px;
+
+    z-index: 3;
+
+    width: 42px;
+    height: 42px;
+
+    display: grid;
+    place-items: center;
+
+    padding: 0;
+
+    color: #ee7657;
+
+    background:
+        rgba(255, 255, 255, 0.94);
+
+    border: 0;
+    border-radius: 50%;
+
+    box-shadow:
+        0 4px 15px
+        rgba(0, 0, 0, 0.15);
+
+    cursor: pointer;
+
+    font-size: 24px;
+}
+
+
+.listing-card__reviews {
+    margin: 0;
+
+    color: var(--color-text-soft);
+
+    font-size: 14px;
+}
+
+
+.listing-card__reviews strong {
+    color: var(--color-text);
+}
+
+</style>
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    async () => {
+
+        const grid =
+            document.getElementById(
+                "favorites-grid"
+            );
+
+
+        /*
+         * Authentication
+         */
+
+        if (
+            !window.TernNestAuth
+            ||
+            !window.TernNestAuth
+                .authenticatedFetch
+        ) {
+            return;
+        }
+
+
+        const hasToken =
+            window.TernNestAuth
+                .getAccessToken()
+            ||
+            window.TernNestAuth
+                .getRefreshToken();
+
+
+        if (!hasToken) {
+
+            window.location.href =
+                "/login/?next=/favorites/";
+
+            return;
+        }
+
+
+        function getResults(data) {
+
+            if (Array.isArray(data)) {
+                return data;
+            }
+
+            return data.results || [];
+        }
+
+
+        function getMainImage(listing) {
+
+            if (
+                !listing.images
+                ||
+                listing.images.length === 0
+            ) {
+                return "";
+            }
+
+
+            const mainImage =
+                listing.images.find(
+                    image => image.is_main
+                )
+                ||
+                listing.images[0];
+
+
+            return mainImage.image;
+        }
+
+
+        function ratingText(listing) {
+
+            const count =
+                listing.reviews_count || 0;
+
+
+            const reviewsText =
+                count === 1
+                    ? "1 review"
+                    : `${count} reviews`;
+
+
+            if (
+                listing.rating === null
+                ||
+                listing.rating === undefined
+            ) {
+                return (
+                    `No rating · ${reviewsText}`
+                );
+            }
+
+
+            return (
+                `★ ${Number(
+                    listing.rating
+                ).toFixed(1)} · ${reviewsText}`
+            );
+        }
+
+
+        function showEmpty() {
+
+            grid.innerHTML = `
+                <div
+                    class="
+                        empty-state
+                        empty-state--wide
+                    "
+                >
+                    <div
+                        class="empty-state__icon"
+                    >
+                        ♡
+                    </div>
+
+                    <h3>
+                        No favorites yet
+                    </h3>
+
+                    <p>
+                        Save properties from the
+                        home page and they will
+                        appear here.
+                    </p>
+
+                    <a
+                        href="/"
+                        class="
+                            button
+                            button--secondary
+                        "
+                    >
+                        Discover stays
+                    </a>
+                </div>
+            `;
+        }
+
+
+        try {
+
+            /*
+             * Get Favorite objects
+             */
+
+            const favoritesResponse =
+                await window
+                    .TernNestAuth
+                    .authenticatedFetch(
+                        "/api/v1/listings/favorites/"
+                    );
+
+
+            if (!favoritesResponse.ok) {
+
+                throw new Error(
+                    "Could not load favorites."
+                );
+            }
+
+
+            const favoritesData =
+                await favoritesResponse.json();
+
+
+            const favorites =
+                getResults(
+                    favoritesData
+                );
+
+
+            if (
+                favorites.length === 0
+            ) {
+                showEmpty();
+                return;
+            }
+
+
+            /*
+             * FavoriteSerializer currently
+             * returns listing ID.
+             *
+             * Load full Listing for every
+             * favorite.
+             */
+
+            const favoriteListings =
+                await Promise.all(
+
+                    favorites.map(
+                        async favorite => {
+
+                            const response =
+                                await window
+                                    .TernNestAuth
+                                    .authenticatedFetch(
+                                        `/api/v1/listings/${favorite.listing}/`
+                                    );
+
+
+                            if (!response.ok) {
+                                return null;
+                            }
+
+
+                            const listing =
+                                await response.json();
+
+
+                            return {
+                                favorite,
+                                listing,
+                            };
+                        }
+                    )
+                );
+
+
+            const availableItems =
+                favoriteListings.filter(
+                    Boolean
+                );
+
+
+            if (
+                availableItems.length === 0
+            ) {
+                showEmpty();
+                return;
+            }
+
+
+            grid.innerHTML = "";
+
+
+            availableItems.forEach(
+                item => {
+
+                    const {
+                        favorite,
+                        listing,
+                    } = item;
+
+
+                    const imageUrl =
+                        getMainImage(
+                            listing
+                        );
+
+
+                    const card =
+                        document.createElement(
+                            "article"
+                        );
+
+
+                    card.className =
+                        "listing-card";
+
+                    card.tabIndex = 0;
+
+                    card.setAttribute(
+                        "role",
+                        "link"
+                    );
+
+
+                    card.innerHTML = `
+
+                        <div
+                            class="
+                                listing-card__image-wrapper
+                            "
+                        >
+
+                            ${
+                                imageUrl
+                                    ? `
+                                        <img
+                                            src="${imageUrl}"
+                                            alt="${listing.title}"
+                                            class="
+                                                listing-card__image
+                                            "
+                                        >
+                                    `
+                                    : `
+                                        <div
+                                            class="
+                                                listing-card__placeholder
+                                            "
+                                        >
+                                            No image
+                                        </div>
+                                    `
+                            }
+
+
+                            <button
+                                type="button"
+                                class="
+                                    listing-card__favorite
+                                "
+                                title="
+                                    Remove from favorites
+                                "
+                                aria-label="
+                                    Remove from favorites
+                                "
+                            >
+                                ♥
+                            </button>
+
+                        </div>
+
+
+                        <div
+                            class="
+                                listing-card__content
+                            "
+                        >
+
+                            <div
+                                class="
+                                    listing-card__header
+                                "
+                            >
+                                <h3>
+                                    ${listing.title}
+                                </h3>
+                            </div>
+
+
+                            <p
+                                class="
+                                    listing-card__location
+                                "
+                            >
+                                ${listing.city},
+                                ${listing.country}
+                            </p>
+
+
+                            <p
+                                class="
+                                    listing-card__reviews
+                                "
+                            >
+                                <strong>
+                                    ${ratingText(
+                                        listing
+                                    )}
+                                </strong>
+                            </p>
+
+
+                            <p
+                                class="
+                                    listing-card__details
+                                "
+                            >
+                                ${listing.max_guests}
+                                guests ·
+                                ${listing.bedrooms}
+                                bedrooms ·
+                                ${listing.beds}
+                                beds
+                            </p>
+
+
+                            <p
+                                class="
+                                    listing-card__price
+                                "
+                            >
+                                <strong>
+                                    €${listing.price_per_night}
+                                </strong>
+
+                                <span>
+                                    / night
+                                </span>
+                            </p>
+
+                        </div>
+                    `;
+
+
+                    /*
+                     * Remove favorite
+                     */
+
+                    const button =
+                        card.querySelector(
+                            ".listing-card__favorite"
+                        );
+
+
+                    button.addEventListener(
+                        "click",
+                        async event => {
+
+                            event.stopPropagation();
+
+                            button.disabled =
+                                true;
+
+
+                            try {
+
+                                const response =
+                                    await window
+                                        .TernNestAuth
+                                        .authenticatedFetch(
+                                            `/api/v1/listings/favorites/${favorite.id}/`,
+                                            {
+                                                method:
+                                                    "DELETE",
+                                            }
+                                        );
+
+
+                                if (!response.ok) {
+
+                                    throw new Error(
+                                        "Could not remove favorite."
+                                    );
+                                }
+
+
+                                card.remove();
+
+
+                                if (
+                                    grid.children.length
+                                    === 0
+                                ) {
+                                    showEmpty();
+                                }
+
+
+                            } catch (error) {
+
+                                console.error(
+                                    "Favorite delete error:",
+                                    error
+                                );
+
+                                button.disabled =
+                                    false;
+                            }
+                        }
+                    );
+
+
+                    /*
+                     * Open listing
+                     */
+
+                    card.addEventListener(
+                        "click",
+                        () => {
+
+                            window.location.href =
+                                `/listings/${listing.id}/`;
+                        }
+                    );
+
+
+                    card.addEventListener(
+                        "keydown",
+                        event => {
+
+                            if (
+                                event.key
+                                === "Enter"
+                            ) {
+
+                                window.location.href =
+                                    `/listings/${listing.id}/`;
+                            }
+                        }
+                    );
+
+
+                    grid.appendChild(
+                        card
+                    );
+                }
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Favorites loading error:",
+                error
+            );
+
+
+            grid.innerHTML = `
+                <div
+                    class="
+                        empty-state
+                        empty-state--wide
+                    "
+                >
+                    <h3>
+                        Unable to load favorites
+                    </h3>
+
+                    <p>
+                        Please refresh the page
+                        and try again.
+                    </p>
+                </div>
+            `;
+        }
+    }
+);
+
+</script>
+
+{% endblock %}
