@@ -47,51 +47,27 @@ class ListingEditPageView(TemplateView):
         return context
 
 
-class ListingAvailabilityPageView(
-    TemplateView
-):
-    template_name = (
-        "frontend/listing_availability.html"
-    )
+class ListingAvailabilityPageView(TemplateView):
+    template_name = ("frontend/listing_availability.html")
 
-    def get_context_data(
-        self,
-        **kwargs,
-    ):
-        context = super().get_context_data(
-            **kwargs
-        )
+    def get_context_data(self, **kwargs,):
+        context = super().get_context_data(**kwargs)
 
-        context["listing_id"] = (
-            self.kwargs["pk"]
-        )
+        context["listing_id"] = (self.kwargs["pk"])
 
         return context
 
 
 class ReviewCreatePageView(TemplateView):
-    template_name = (
-        "frontend/review_create.html"
-    )
+    template_name = "frontend/review_create.html"
 
-    def get_context_data(
-        self,
-        **kwargs,
-    ):
-        context = super().get_context_data(
-            **kwargs
-        )
+    def get_context_data(self, **kwargs,):
+        context = super().get_context_data(**kwargs)
 
-        context["booking_id"] = (
-            self.kwargs["booking_id"]
-        )
+        context["booking_id"] = (self.kwargs["booking_id"])
 
         return context
 
 
-class AccountSettingsPageView(
-    TemplateView
-):
-    template_name = (
-        "frontend/account_settings.html"
-    )
+class AccountSettingsPageView(TemplateView):
+    template_name = "frontend/account_settings.html"

@@ -93,15 +93,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True,
-        trim_whitespace=False,
-    )
+    password = serializers.CharField(write_only=True, trim_whitespace=False,)
 
-    password_confirm = serializers.CharField(
-        write_only=True,
-        trim_whitespace=False,
-    )
+    password_confirm = serializers.CharField(write_only=True, trim_whitespace=False,)
 
     class Meta:
         model = User
@@ -121,9 +115,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def validate_email(self, value):
         value = value.strip().lower()
 
-        if User.objects.filter(
-                email__iexact=value
-        ).exists():
+        if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError(
                 "A user with this email already exists."
             )
@@ -132,9 +124,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         password = attrs.get("password")
-        password_confirm = attrs.get(
-            "password_confirm"
-        )
+        password_confirm = attrs.get("password_confirm")
 
         if password != password_confirm:
             raise serializers.ValidationError(
@@ -178,50 +168,28 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        validated_data.pop(
-            "password_confirm"
-        )
+        validated_data.pop("password_confirm")
 
-        password = validated_data.pop(
-            "password"
-        )
+        password = validated_data.pop("password")
 
-        return User.objects.create_user(
-            password=password,
-            **validated_data,
-        )
+        return User.objects.create_user(password=password, **validated_data,)
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    current_password = serializers.CharField(
-        write_only=True,
-        trim_whitespace=False,
-    )
+    current_password = serializers.CharField(write_only=True, trim_whitespace=False,)
 
-    new_password = serializers.CharField(
-        write_only=True,
-        trim_whitespace=False,
-    )
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False,)
 
-    new_password_confirm = serializers.CharField(
-        write_only=True,
-        trim_whitespace=False,
-    )
+    new_password_confirm = serializers.CharField(write_only=True, trim_whitespace=False,)
 
     def validate(self, attrs):
         user = self.context["request"].user
 
-        current_password = attrs[
-            "current_password"
-        ]
+        current_password = attrs["current_password"]
 
-        new_password = attrs[
-            "new_password"
-        ]
+        new_password = attrs["new_password"]
 
-        new_password_confirm = attrs[
-            "new_password_confirm"
-        ]
+        new_password_confirm = attrs["new_password_confirm"]
 
         if not user.check_password(
             current_password
@@ -247,10 +215,7 @@ class ChangePasswordSerializer(serializers.Serializer):
             )
 
         try:
-            validate_password(
-                new_password,
-                user=user,
-            )
+            validate_password(new_password, user=user,)
         except DjangoValidationError as error:
             raise serializers.ValidationError(
                 {

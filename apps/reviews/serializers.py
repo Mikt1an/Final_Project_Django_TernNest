@@ -15,9 +15,7 @@ from apps.reviews.models import (
 )
 
 
-class ReviewImageSerializer(
-    serializers.ModelSerializer
-):
+class ReviewImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReviewImage
 
@@ -33,39 +31,21 @@ class ReviewImageSerializer(
             "created_at",
         )
 
-    def validate(
-        self,
-        attrs,
-    ):
-        review = attrs.get(
-            "review"
-        )
+    def validate(self, attrs,):
+        review = attrs.get("review")
 
-        if (
-            review is None
-            and
-            self.instance is not None
-        ):
-            review = (
-                self.instance.review
-            )
+        if review is None and self.instance is not None:
+            review = self.instance.review
 
         if review is None:
             return attrs
 
-        images = (
-            review.images.all()
-        )
+        images = review.images.all()
 
         if self.instance is not None:
-            images = images.exclude(
-                pk=self.instance.pk
-            )
+            images = images.exclude(pk=self.instance.pk)
 
-        if (
-            images.count()
-            >= MAX_REVIEW_IMAGES
-        ):
+        if images.count() >= MAX_REVIEW_IMAGES:
             raise serializers.ValidationError(
                 {
                     "image": (
@@ -80,23 +60,12 @@ class ReviewImageSerializer(
         return attrs
 
 
-class ReviewReadSerializer(
-    serializers.ModelSerializer
-):
-    guest = UserPublicSerializer(
-        source="booking.guest",
-        read_only=True,
-    )
+class ReviewReadSerializer(serializers.ModelSerializer):
+    guest = UserPublicSerializer(source="booking.guest", read_only=True,)
 
-    listing_id = serializers.IntegerField(
-        source="booking.listing_id",
-        read_only=True,
-    )
+    listing_id = serializers.IntegerField(source="booking.listing_id", read_only=True,)
 
-    images = ReviewImageSerializer(
-        many=True,
-        read_only=True,
-    )
+    images = ReviewImageSerializer(many=True, read_only=True,)
 
     class Meta:
         model = Review
@@ -117,9 +86,7 @@ class ReviewReadSerializer(
         read_only_fields = fields
 
 
-class ReviewCreateSerializer(
-    serializers.ModelSerializer
-):
+class ReviewCreateSerializer(serializers.ModelSerializer):
     booking = (
         serializers.PrimaryKeyRelatedField(
             queryset=(
@@ -150,36 +117,17 @@ class ReviewCreateSerializer(
             "created_at",
         )
 
-    def validate(
-        self,
-        attrs,
-    ):
-        booking = attrs[
-            "booking"
-        ]
+    def validate(self, attrs,):
+        booking = attrs["booking"]
 
-        liked = (
-            attrs.get(
-                "liked"
-            )
-            or ""
-        ).strip()
+        liked = (attrs.get("liked") or "").strip()
 
-        disliked = (
-            attrs.get(
-                "disliked"
-            )
-            or ""
-        ).strip()
+        disliked = (attrs.get("disliked") or "").strip()
 
         attrs["liked"] = liked
         attrs["disliked"] = disliked
 
-        if (
-            not liked
-            and
-            not disliked
-        ):
+        if not liked and not disliked:
             raise (
                 serializers.ValidationError(
                     {
@@ -192,10 +140,7 @@ class ReviewCreateSerializer(
                 )
             )
 
-        if (
-            booking.status
-            != Booking.Status.COMPLETED
-        ):
+        if booking.status != Booking.Status.COMPLETED:
             raise (
                 serializers.ValidationError(
                     {
@@ -208,11 +153,7 @@ class ReviewCreateSerializer(
                 )
             )
 
-        if (
-            booking.check_out
-            >
-            timezone.now()
-        ):
+        if booking.check_out > timezone.now():
             raise (
                 serializers.ValidationError(
                     {
@@ -225,11 +166,7 @@ class ReviewCreateSerializer(
                 )
             )
 
-        if (
-            booking.guest_id
-            ==
-            booking.listing.owner_id
-        ):
+        if booking.guest_id == booking.listing.owner_id:
             raise (
                 serializers.ValidationError(
                     {
@@ -242,11 +179,7 @@ class ReviewCreateSerializer(
                 )
             )
 
-        if (
-            Review.objects.filter(
-                booking=booking
-            ).exists()
-        ):
+        if Review.objects.filter(booking=booking).exists():
             raise (
                 serializers.ValidationError(
                     {
@@ -262,9 +195,7 @@ class ReviewCreateSerializer(
         return attrs
 
 
-class ReviewUpdateSerializer(
-    serializers.ModelSerializer
-):
+class ReviewUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
 
@@ -281,34 +212,15 @@ class ReviewUpdateSerializer(
             "updated_at",
         )
 
-    def validate(
-        self,
-        attrs,
-    ):
-        liked = (
-            attrs.get(
-                "liked",
-                self.instance.liked,
-            )
-            or ""
-        ).strip()
+    def validate(self, attrs,):
+        liked = (attrs.get( "liked", self.instance.liked,) or "").strip()
 
-        disliked = (
-            attrs.get(
-                "disliked",
-                self.instance.disliked,
-            )
-            or ""
-        ).strip()
+        disliked = (attrs.get("disliked", self.instance.disliked,) or "").strip()
 
         attrs["liked"] = liked
         attrs["disliked"] = disliked
 
-        if (
-            not liked
-            and
-            not disliked
-        ):
+        if not liked and not disliked:
             raise (
                 serializers.ValidationError(
                     {

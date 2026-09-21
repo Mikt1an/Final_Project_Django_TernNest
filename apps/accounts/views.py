@@ -26,26 +26,16 @@ from apps.accounts.serializers import (
 
 class UserRegistrationView(CreateAPIView):
     queryset = User.objects.all()
-    serializer_class = (
-        UserRegistrationSerializer
-    )
-    permission_classes = (
-        AllowAny,
-    )
+    serializer_class = UserRegistrationSerializer
+    permission_classes = (AllowAny,)
 
 
 class CurrentUserView(
     RetrieveUpdateAPIView,
 ):
-    permission_classes = (
-        IsAuthenticated,
-    )
+    permission_classes = (IsAuthenticated,)
 
-    parser_classes = (
-        JSONParser,
-        FormParser,
-        MultiPartParser,
-    )
+    parser_classes = (JSONParser, FormParser, MultiPartParser,)
 
     # Only GET and PATCH are required for this endpoint.
     # Full profile replacement through PUT is intentionally disabled.
@@ -67,34 +57,16 @@ class CurrentUserView(
 
 
 class ChangePasswordView(APIView):
-    permission_classes = (
-        IsAuthenticated,
-    )
+    permission_classes = (IsAuthenticated,)
 
-    def post(
-        self,
-        request,
-        *args,
-        **kwargs,
-    ):
-        serializer = ChangePasswordSerializer(
-            data=request.data,
-            context={
-                "request": request,
-            },
-        )
+    def post(self, request, *args, **kwargs,):
+        serializer = ChangePasswordSerializer(data=request.data, context={"request": request,},)
 
-        serializer.is_valid(
-            raise_exception=True
-        )
+        serializer.is_valid(raise_exception=True)
 
         user = request.user
 
-        user.set_password(
-            serializer.validated_data[
-                "new_password"
-            ]
-        )
+        user.set_password(serializer.validated_data["new_password"])
 
         user.save()
 

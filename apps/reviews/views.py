@@ -44,27 +44,15 @@ def get_review_queryset():
     )
 
 
-class ReviewListCreateView(
-    ListCreateAPIView
-):
+class ReviewListCreateView(ListCreateAPIView):
     def get_queryset(self):
-        queryset = (
-            get_review_queryset()
-        )
+        queryset = get_review_queryset()
 
-        listing_id = (
-            self.request
-            .query_params
-            .get(
-                "listing"
-            )
-        )
+        listing_id = (self.request.query_params.get("listing"))
 
         if listing_id is not None:
             try:
-                listing_id = int(
-                    listing_id
-                )
+                listing_id = int(listing_id)
 
             except (
                 TypeError,
@@ -79,116 +67,50 @@ class ReviewListCreateView(
                     }
                 )
 
-            queryset = queryset.filter(
-                booking__listing_id=(
-                    listing_id
-                ),
-            )
+            queryset = queryset.filter(booking__listing_id=(listing_id),)
 
         return queryset
 
     def get_serializer_class(self):
-        if (
-            self.request.method
-            == "GET"
-        ):
-            return (
-                ReviewReadSerializer
-            )
+        if self.request.method == "GET":
+            return ReviewReadSerializer
 
-        return (
-            ReviewCreateSerializer
-        )
+        return ReviewCreateSerializer
 
     def get_permissions(self):
-        if (
-            self.request.method
-            == "POST"
-        ):
-            permission_classes = (
-                IsAuthenticated,
-                CanCreateReview,
-            )
+        if self.request.method == "POST":
+            permission_classes = (IsAuthenticated, CanCreateReview,)
 
         else:
-            permission_classes = (
-                AllowAny,
-            )
+            permission_classes = AllowAny
 
-        return [
-            permission()
-            for permission
-            in permission_classes
-        ]
+        return [permission() for permission in permission_classes]
 
 
-class ReviewDetailView(
-    RetrieveUpdateDestroyAPIView
-):
-    permission_classes = (
-        IsReviewAuthorOrReadOnly,
-    )
+class ReviewDetailView(RetrieveUpdateDestroyAPIView):
+    permission_classes = IsReviewAuthorOrReadOnly,
 
     def get_queryset(self):
-        return (
-            get_review_queryset()
-        )
+        return get_review_queryset()
 
     def get_serializer_class(self):
-        if (
-            self.request.method
-            in (
-                "PUT",
-                "PATCH",
-            )
-        ):
-            return (
-                ReviewUpdateSerializer
-            )
+        if self.request.method in ("PUT", "PATCH",):
+            return ReviewUpdateSerializer
 
-        return (
-            ReviewReadSerializer
-        )
+        return ReviewReadSerializer
 
 
-class ReviewImageCreateView(
-    CreateAPIView
-):
-    queryset = (
-        ReviewImage.objects
-        .select_related(
-            "review",
-            "review__booking",
-            "review__booking__guest",
-        )
-    )
+class ReviewImageCreateView(CreateAPIView):
+    queryset = (ReviewImage.objects.select_related("review", "review__booking", "review__booking__guest",))
 
-    serializer_class = (
-        ReviewImageSerializer
-    )
+    serializer_class = ReviewImageSerializer
 
-    permission_classes = (
-        IsAuthenticated,
-        IsReviewImageAuthorOrReadOnly,
-    )
+    permission_classes = (IsAuthenticated, IsReviewImageAuthorOrReadOnly,)
 
 
-class ReviewImageDetailView(
-    RetrieveDestroyAPIView
-):
-    queryset = (
-        ReviewImage.objects
-        .select_related(
-            "review",
-            "review__booking",
-            "review__booking__guest",
-        )
-    )
+class ReviewImageDetailView(RetrieveDestroyAPIView):
+    queryset = (ReviewImage.objects.select_related("review", "review__booking", "review__booking__guest",))
 
-    serializer_class = (
-        ReviewImageSerializer
-    )
+    serializer_class = ReviewImageSerializer
 
-    permission_classes = (
-        IsReviewImageAuthorOrReadOnly,
-    )
+    permission_classes = (IsReviewImageAuthorOrReadOnly,)

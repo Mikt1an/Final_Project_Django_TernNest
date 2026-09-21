@@ -42,16 +42,10 @@ def get_booking_queryset():
 
 
 class BookingListCreateView(ListCreateAPIView):
-    permission_classes = (
-        IsAuthenticated,
-        CanCreateBooking,
-    )
+    permission_classes = (IsAuthenticated, CanCreateBooking,)
 
     def get_queryset(self):
-        return get_booking_queryset().filter(
-            Q(guest=self.request.user)
-            | Q(listing__owner=self.request.user)
-        ).distinct()
+        return get_booking_queryset().filter(Q(guest=self.request.user) | Q(listing__owner=self.request.user)).distinct()
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -60,64 +54,36 @@ class BookingListCreateView(ListCreateAPIView):
         return BookingCreateSerializer
 
     def perform_create(self, serializer):
-        serializer.save(
-            guest=self.request.user,
-        )
+        serializer.save(guest=self.request.user,)
 
 
 class BookingDetailView(RetrieveAPIView):
     serializer_class = BookingReadSerializer
-    permission_classes = (
-        IsAuthenticated,
-        IsBookingParticipant,
-    )
+    permission_classes = (IsAuthenticated, IsBookingParticipant,)
 
     def get_queryset(self):
-        return get_booking_queryset().filter(
-            Q(guest=self.request.user)
-            | Q(listing__owner=self.request.user)
-        ).distinct()
+        return get_booking_queryset().filter(Q(guest=self.request.user) | Q(listing__owner=self.request.user)).distinct()
 
 
 class BookingActionView(APIView):
     def get_booking(self):
-        booking = get_object_or_404(
-            get_booking_queryset(),
-            pk=self.kwargs["pk"],
-        )
+        booking = get_object_or_404(get_booking_queryset(), pk=self.kwargs["pk"],)
 
-        self.check_object_permissions(
-            self.request,
-            booking,
-        )
+        self.check_object_permissions(self.request, booking,)
 
         return booking
 
     def booking_response(self, booking):
-        serializer = BookingReadSerializer(
-            booking,
-            context={
-                "request": self.request,
-            },
-        )
+        serializer = BookingReadSerializer(booking, context={"request": self.request,},)
 
         return Response(serializer.data)
 
 
 class BookingCancelView(BookingActionView):
-    permission_classes = (
-        IsAuthenticated,
-        IsBookingGuest | IsBookingListingOwner,
-    )
+    permission_classes = (IsAuthenticated, IsBookingGuest | IsBookingListingOwner,)
 
-    def validate_guest_cancellation(
-        self,
-        booking,
-    ):
-        if booking.status not in (
-            Booking.Status.PENDING,
-            Booking.Status.CONFIRMED,
-        ):
+    def validate_guest_cancellation(self, booking,):
+        if booking.status not in (Booking.Status.PENDING, Booking.Status.CONFIRMED,):
             raise ValidationError(
                 {
                     "status": (
@@ -128,14 +94,7 @@ class BookingCancelView(BookingActionView):
                 }
             )
 
-        cancellation_deadline = (
-            booking.check_in
-            - timedelta(
-                hours=(
-                    BOOKING_CANCELLATION_DEADLINE_HOURS
-                )
-            )
-        )
+        cancellation_deadline = (booking.check_in - timedelta(hours=BOOKING_CANCELLATION_DEADLINE_HOURS))
 
         if timezone.now() > cancellation_deadline:
             raise ValidationError(
@@ -149,14 +108,8 @@ class BookingCancelView(BookingActionView):
                 }
             )
 
-    def validate_owner_cancellation(
-        self,
-        booking,
-    ):
-        if (
-            booking.status
-            != Booking.Status.CONFIRMED
-        ):
+    def validate_owner_cancellation(self, booking,):
+        if booking.status != Booking.Status.CONFIRMED:
             raise ValidationError(
                 {
                     "status": (
@@ -180,33 +133,18 @@ class BookingCancelView(BookingActionView):
     def post(self, request, *args, **kwargs):
         booking = self.get_booking()
 
-        if booking.guest_id == request.user.id:
-            self.validate_guest_cancellation(
-                booking
-            )
+        if booking.guest_id == request.user.id:self.validate_guest_cancellation(booking)
         else:
-            self.validate_owner_cancellation(
-                booking
-            )
+            self.validate_owner_cancellation(booking)
 
         booking.status = Booking.Status.CANCELLED
-        booking.save(
-            update_fields=(
-                "status",
-                "updated_at",
-            )
-        )
+        booking.save(update_fields=("status", "updated_at",))
 
-        return self.booking_response(
-            booking
-        )
+        return self.booking_response(booking)
 
 
 class BookingRejectView(BookingActionView):
-    permission_classes = (
-        IsAuthenticated,
-        IsBookingListingOwner,
-    )
+    permission_classes = (IsAuthenticated, IsBookingListingOwner,)
 
     def post(self, request, *args, **kwargs):
         booking = self.get_booking()
@@ -222,23 +160,13 @@ class BookingRejectView(BookingActionView):
             )
 
         booking.status = Booking.Status.REJECTED
-        booking.save(
-            update_fields=(
-                "status",
-                "updated_at",
-            )
-        )
+        booking.save(update_fields=("status", "updated_at",))
 
-        return self.booking_response(
-            booking
-        )
+        return self.booking_response(booking)
 
 
 class BookingConfirmView(BookingActionView):
-    permission_classes = (
-        IsAuthenticated,
-        IsBookingListingOwner,
-    )
+    permission_classes = (IsAuthenticated, IsBookingListingOwner,)
 
     def post(self, request, *args, **kwargs):
         booking = self.get_booking()
@@ -254,21 +182,13 @@ class BookingConfirmView(BookingActionView):
             )
 
         booking.status = Booking.Status.CONFIRMED
-        booking.save(
-            update_fields=(
-                "status",
-                "updated_at",
-            )
-        )
+        booking.save(update_fields=("status", "updated_at",))
 
         return self.booking_response(booking)
 
 
 class BookingCompleteView(BookingActionView):
-    permission_classes = (
-        IsAuthenticated,
-        IsBookingListingOwner,
-    )
+    permission_classes = (IsAuthenticated, IsBookingListingOwner,)
 
     def post(self, request, *args, **kwargs):
         booking = self.get_booking()
@@ -294,45 +214,22 @@ class BookingCompleteView(BookingActionView):
             )
 
         booking.status = Booking.Status.COMPLETED
-        booking.save(
-            update_fields=(
-                "status",
-                "updated_at",
-            )
-        )
+        booking.save(update_fields=("status", "updated_at",))
 
         return self.booking_response(booking)
 
 
 class BlockedPeriodListCreateView(ListCreateAPIView):
     serializer_class = BlockedPeriodSerializer
-    permission_classes = (
-        IsAuthenticated,
-        IsBlockedPeriodListingOwner,
-    )
+    permission_classes = (IsAuthenticated, IsBlockedPeriodListingOwner,)
 
     def get_queryset(self):
-        return BlockedPeriod.objects.filter(
-            listing__owner=self.request.user,
-        ).select_related(
-            "listing",
-            "listing__owner",
-        )
+        return BlockedPeriod.objects.filter(listing__owner=self.request.user,).select_related("listing", "listing__owner",)
 
 
-class BlockedPeriodDetailView(
-    RetrieveUpdateDestroyAPIView,
-):
+class BlockedPeriodDetailView(RetrieveUpdateDestroyAPIView,):
     serializer_class = BlockedPeriodSerializer
-    permission_classes = (
-        IsAuthenticated,
-        IsBlockedPeriodListingOwner,
-    )
+    permission_classes = (IsAuthenticated, IsBlockedPeriodListingOwner,)
 
     def get_queryset(self):
-        return BlockedPeriod.objects.filter(
-            listing__owner=self.request.user,
-        ).select_related(
-            "listing",
-            "listing__owner",
-        )
+        return BlockedPeriod.objects.filter(listing__owner=self.request.user,).select_related("listing", "listing__owner",)

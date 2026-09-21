@@ -24,10 +24,7 @@ from apps.listings.validators import validate_max_images
 
 # Create your models here.
 class Amenity(TimeStampedModel):
-    name = models.CharField(
-        max_length=100,
-        unique=True,
-    )
+    name = models.CharField(max_length=100, unique=True,)
 
     class Meta:
         ordering = ("name",)
@@ -44,47 +41,25 @@ class Listing(TimeStampedModel):
         HOUSE = "house", "House"
         STUDIO = "studio", "Studio"
 
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name="listings",
-    )
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="listings",)
 
-    title = models.CharField(
-        max_length=200,
-    )
+    title = models.CharField(max_length=200,)
 
     description = models.TextField()
 
-    listing_type = models.CharField(
-        max_length=20,
-        choices=ListingType.choices,
-        default=ListingType.APARTMENT,
-    )
+    listing_type = models.CharField(max_length=20, choices=ListingType.choices, default=ListingType.APARTMENT,)
 
-    country = models.CharField(
-        max_length=100,
-    )
+    country = models.CharField(max_length=100,)
 
-    city = models.CharField(
-        max_length=100,
-    )
+    city = models.CharField(max_length=100,)
 
-    address = models.CharField(
-        max_length=255,
-    )
+    address = models.CharField(max_length=255,)
 
-    earliest_check_in_time = models.TimeField(
-        default=time(15, 0),
-    )
+    earliest_check_in_time = models.TimeField(default=time(15, 0),)
 
-    latest_check_out_time = models.TimeField(
-        default=time(11, 0),
-    )
+    latest_check_out_time = models.TimeField(default=time(11, 0),)
 
-    price_per_night = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+    price_per_night = models.DecimalField(max_digits=10, decimal_places=2,
         validators=[
             MinValueValidator(
                 Decimal(
@@ -99,8 +74,7 @@ class Listing(TimeStampedModel):
         ],
     )
 
-    max_guests = models.PositiveIntegerField(
-        default=1,
+    max_guests = models.PositiveIntegerField(default=1,
         validators=[
             MinValueValidator(
                 MIN_GUESTS
@@ -111,8 +85,7 @@ class Listing(TimeStampedModel):
         ],
     )
 
-    bedrooms = models.PositiveIntegerField(
-        default=1,
+    bedrooms = models.PositiveIntegerField(default=1,
         validators=[
             MaxValueValidator(
                 MAX_BEDROOMS
@@ -120,8 +93,7 @@ class Listing(TimeStampedModel):
         ],
     )
 
-    beds = models.PositiveIntegerField(
-        default=1,
+    beds = models.PositiveIntegerField(default=1,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(
@@ -130,8 +102,7 @@ class Listing(TimeStampedModel):
         ],
     )
 
-    bathrooms = models.PositiveIntegerField(
-        default=1,
+    bathrooms = models.PositiveIntegerField(default=1,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(
@@ -140,32 +111,18 @@ class Listing(TimeStampedModel):
         ],
     )
 
-    amenities = models.ManyToManyField(
-        Amenity,
-        related_name="listings",
-        blank=True,
-    )
+    amenities = models.ManyToManyField(Amenity, related_name="listings",blank=True,)
 
-    is_active = models.BooleanField(
-        default=True,
-    )
+    is_active = models.BooleanField(default=True,)
 
     def save(self, *args, **kwargs):
-        if (
-            self.listing_type
-            == self.ListingType.STUDIO
-        ):
+        if self.listing_type == self.ListingType.STUDIO:
             self.bedrooms = 0
 
-        super().save(
-            *args,
-            **kwargs,
-        )
+        super().save(*args, **kwargs,)
 
     class Meta:
-        ordering = (
-            "-created_at",
-        )
+        ordering = ("-created_at",)
 
         verbose_name = "Listing"
         verbose_name_plural = "Listings"
@@ -234,46 +191,28 @@ class Listing(TimeStampedModel):
 
 
 class ListingImage(TimeStampedModel):
-    listing = models.ForeignKey(
-        Listing,
-        on_delete=models.PROTECT,
-        related_name="images",
-    )
+    listing = models.ForeignKey(Listing, on_delete=models.PROTECT,related_name="images",)
 
-    image = models.ImageField(
-        upload_to="apartments/photos/",
-    )
+    image = models.ImageField(upload_to="apartments/photos/",)
 
-    is_main = models.BooleanField(
-        default=False,
-    )
+    is_main = models.BooleanField(default=False,)
 
     def clean(self):
         super().clean()
 
         if self._state.adding:
-            validate_max_images(
-                self.listing.images.count()
-            )
+            validate_max_images(self.listing.images.count())
 
     def save(self, *args, **kwargs):
         self.full_clean()
 
-        super().save(
-            *args,
-            **kwargs,
-        )
+        super().save(*args, **kwargs,)
 
     class Meta:
-        ordering = (
-            "-is_main",
-            "created_at",
-        )
+        ordering = ("-is_main", "created_at",)
 
         verbose_name = "Listing image"
-        verbose_name_plural = (
-            "Listing images"
-        )
+        verbose_name_plural = ("Listing images")
 
     def __str__(self):
         return (
@@ -283,22 +222,12 @@ class ListingImage(TimeStampedModel):
 
 
 class Favorite(TimeStampedModel):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name="favorites",
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="favorites",)
 
-    listing = models.ForeignKey(
-        Listing,
-        on_delete=models.PROTECT,
-        related_name="favorites",
-    )
+    listing = models.ForeignKey(Listing, on_delete=models.PROTECT, related_name="favorites",)
 
     class Meta:
-        ordering = (
-            "-created_at",
-        )
+        ordering = ("-created_at",)
 
         verbose_name = "Favorite"
         verbose_name_plural = "Favorites"
@@ -324,40 +253,22 @@ class Favorite(TimeStampedModel):
 
 
 class ListingView(TimeStampedModel):
-    listing = models.ForeignKey(
-        Listing,
-        on_delete=models.PROTECT,
-        related_name="views",
-    )
+    listing = models.ForeignKey(Listing, on_delete=models.PROTECT, related_name="views",)
 
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        related_name="listing_views",
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="listing_views",
         null=True,
         blank=True,
     )
 
-    viewer_key = models.CharField(
-        max_length=80,
-        editable=False,
-    )
+    viewer_key = models.CharField(max_length=80, editable=False,)
 
-    viewed_on = models.DateField(
-        default=timezone.localdate,
-        editable=False,
-    )
+    viewed_on = models.DateField(default=timezone.localdate, editable=False,)
 
     class Meta:
-        ordering = (
-            "-updated_at",
-            "-created_at",
-        )
+        ordering = ("-updated_at", "-created_at",)
 
         verbose_name = "Listing view"
-        verbose_name_plural = (
-            "Listing views"
-        )
+        verbose_name_plural = "Listing views"
 
         constraints = [
             models.UniqueConstraint(
@@ -387,11 +298,7 @@ class ListingView(TimeStampedModel):
         ]
 
     def __str__(self):
-        viewer = (
-            self.user.email
-            if self.user_id
-            else "Anonymous"
-        )
+        viewer = (self.user.email if self.user_id else "Anonymous")
 
         return (
             f"{viewer} viewed "
@@ -401,66 +308,38 @@ class ListingView(TimeStampedModel):
 
 
 class SearchHistory(TimeStampedModel):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        related_name="search_history",
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="search_history",
         null=True,
         blank=True,
     )
 
-    searcher_key = models.CharField(
-        max_length=80,
-        editable=False,
-    )
+    searcher_key = models.CharField(max_length=80, editable=False,)
 
-    query = models.CharField(
-        max_length=200,
-    )
+    query = models.CharField(max_length=200,)
 
-    normalized_query = models.CharField(
-        max_length=200,
-        editable=False,
-    )
+    normalized_query = models.CharField(max_length=200, editable=False,)
 
-    searched_on = models.DateField(
-        default=timezone.localdate,
-        editable=False,
-    )
+    searched_on = models.DateField(default=timezone.localdate, editable=False,
+)
 
     @staticmethod
     def normalize_query(value):
-        cleaned_query = " ".join(
-            str(value or "").split()
-        )
+        cleaned_query = " ".join(str(value or "").split())
 
         return cleaned_query.casefold()
 
     def save(self, *args, **kwargs):
-        self.query = " ".join(
-            str(self.query or "").split()
-        )
+        self.query = " ".join(str(self.query or "").split())
 
-        self.normalized_query = (
-            self.normalize_query(
-                self.query
-            )
-        )
+        self.normalized_query = (self.normalize_query(self.query))
 
-        super().save(
-            *args,
-            **kwargs,
-        )
+        super().save(*args, **kwargs,)
 
     class Meta:
-        ordering = (
-            "-created_at",
-        )
+        ordering = ("-created_at",)
 
         verbose_name = "Search history"
-        verbose_name_plural = (
-            "Search history"
-        )
+        verbose_name_plural = ("Search history")
 
         constraints = [
             models.CheckConstraint(
@@ -521,11 +400,7 @@ class SearchHistory(TimeStampedModel):
         ]
 
     def __str__(self):
-        searcher = (
-            self.user.email
-            if self.user_id
-            else "Anonymous"
-        )
+        searcher = (self.user.email if self.user_id else "Anonymous")
 
         return (
             f"{searcher} searched "
