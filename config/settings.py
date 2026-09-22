@@ -45,7 +45,7 @@ env = environ.Env(
     AI_AGENT_ENABLED=(bool, False),
 )
 
-environ.Env.read_env(BASE_DIR / ".env", parse_coments=True)
+environ.Env.read_env(BASE_DIR / ".env", parse_comments=True,)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
@@ -176,7 +176,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 # Email
@@ -197,9 +198,7 @@ MEDIA_URL = "/media/"
 AI_AGENT_ENABLED = env.bool("AI_AGENT_ENABLED",default=False,)
 
 AI_PROVIDER = env("AI_PROVIDER",default="openai",)
-
 AI_MODEL = env("AI_MODEL",default="",)
 
 OPENAI_API_KEY = env("OPENAI_API_KEY",default="",)
-
 GEMINI_API_KEY = env("GEMINI_API_KEY",default="",)

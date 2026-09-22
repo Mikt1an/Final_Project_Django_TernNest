@@ -307,7 +307,7 @@ class ListingWriteSerializer(serializers.ModelSerializer,):
             raise serializers.ValidationError(
                 {
                     "bedrooms": (
-                        "Apartments and houses "
+                        "Apartment and houses "
                         "must have at least one "
                         "bedroom."
                     )

@@ -82,13 +82,13 @@ class ReviewListCreateView(ListCreateAPIView):
             permission_classes = (IsAuthenticated, CanCreateReview,)
 
         else:
-            permission_classes = AllowAny
+            permission_classes = [AllowAny,]
 
         return [permission() for permission in permission_classes]
 
 
 class ReviewDetailView(RetrieveUpdateDestroyAPIView):
-    permission_classes = IsReviewAuthorOrReadOnly,
+    permission_classes = [IsReviewAuthorOrReadOnly,]
 
     def get_queryset(self):
         return get_review_queryset()
@@ -113,4 +113,4 @@ class ReviewImageDetailView(RetrieveDestroyAPIView):
 
     serializer_class = ReviewImageSerializer
 
-    permission_classes = (IsReviewImageAuthorOrReadOnly,)
+    permission_classes = [IsReviewImageAuthorOrReadOnly,]

@@ -43,6 +43,7 @@
                 <a
                     class="navigation__link {% if request.resolver_match.url_name == 'home' %}navigation__link--active{% endif %}"
                     href="{% url 'frontend:home' %}"
+                    data-role-visible="guest,tenant"
                 >
                     Explore
                 </a>
@@ -50,6 +51,8 @@
                 <a
                     class="navigation__link {% if request.resolver_match.url_name == 'listing-create' %}navigation__link--active{% endif %}"
                     href="{% url 'frontend:listing-create' %}"
+                    data-role-visible="landlord"
+                    hidden
                 >
                     List your home
                 </a>
@@ -57,6 +60,8 @@
                 <a
                     class="navigation__link {% if request.resolver_match.url_name == 'favorites' %}navigation__link--active{% endif %}"
                     href="{% url 'frontend:favorites' %}"
+                    data-role-visible="tenant"
+                    hidden
                 >
                     <span aria-hidden="true">♡</span>
                     Favorites
@@ -64,7 +69,10 @@
             </nav>
 
             <!-- Guest navigation -->
-            <div class="navigation__actions" data-guest-navigation>
+            <div
+                class="navigation__actions"
+                data-guest-navigation
+            >
                 <a
                     class="button button--ghost button--small"
                     href="{% url 'frontend:login' %}"
@@ -80,8 +88,7 @@
                 </a>
             </div>
 
-            <!-- Authenticated user navigation.
-                It remains hidden until JavaScript restores the session. -->
+            <!-- Authenticated user navigation -->
             <div
                 class="navigation__actions"
                 data-user-navigation
@@ -120,6 +127,11 @@
 
     <script
         src="{% static 'frontend/js/auth.js' %}"
+        defer
+    ></script>
+
+    <script
+        src="{% static 'frontend/js/role_mode.js' %}"
         defer
     ></script>
 

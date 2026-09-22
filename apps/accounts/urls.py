@@ -9,6 +9,7 @@ from apps.accounts.views import (
     ChangePasswordView,
     CurrentUserView,
     UserRegistrationView,
+    BecomeLandlordView,
 )
 
 
@@ -44,5 +45,10 @@ urlpatterns = [
         "change-password/",
         ChangePasswordView.as_view(),
         name="change-password",
+    ),
+    path(
+        "become-landlord/",
+        BecomeLandlordView.as_view(),
+        name="become-landlord",
     ),
 ]

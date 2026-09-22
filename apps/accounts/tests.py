@@ -1,6 +1,7 @@
 import tempfile
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import (
     SimpleUploadedFile,
 )
@@ -8,6 +9,12 @@ from django.urls import reverse
 
 from rest_framework import status
 from rest_framework.test import APITestCase
+
+from apps.accounts.roles import (
+    LANDLORD_GROUP,
+    TENANT_GROUP,
+    has_role,
+)
 
 
 User = get_user_model()
@@ -86,6 +93,38 @@ class RegistrationAPITests(AccountsAPITestCase):
         self.assertNotIn(
             "password_confirm",
             response.data,
+        )
+
+    def test_registered_user_receives_tenant_role(self):
+        response = self.client.post(
+            self.url,
+            self.valid_payload(),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        user = User.objects.get()
+
+        self.assertTrue(
+            has_role(
+                user,
+                TENANT_GROUP,
+            )
+        )
+        self.assertEqual(
+            list(
+                user.groups
+                .order_by("name")
+                .values_list(
+                    "name",
+                    flat=True,
+                )
+            ),
+            [TENANT_GROUP],
         )
 
     def test_email_is_stored_in_lowercase(self):
@@ -420,6 +459,20 @@ class CurrentUserAPITests(AccountsAPITestCase):
             response.data,
         )
 
+    def test_user_profile_contains_roles(self):
+        response = self.client.get(
+            self.url
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data["roles"],
+            [TENANT_GROUP],
+        )
+
     def test_user_can_update_profile(self):
         response = self.client.patch(
             self.url,
@@ -574,6 +627,125 @@ class CurrentUserAPITests(AccountsAPITestCase):
                         "users/avatars/"
                     )
                 )
+
+
+class BecomeLandlordAPITests(AccountsAPITestCase):
+    def setUp(self):
+        Group.objects.get_or_create(
+            name=LANDLORD_GROUP
+        )
+
+        self.user = self.create_user(
+            email="tenant@example.com",
+            phone_number="+491700000141",
+        )
+
+        self.url = reverse(
+            "accounts:become-landlord"
+        )
+
+    def test_authentication_is_required(self):
+        response = self.client.post(
+            self.url,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+        self.assertFalse(
+            has_role(
+                self.user,
+                LANDLORD_GROUP,
+            )
+        )
+
+    def test_tenant_can_become_landlord(self):
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        response = self.client.post(
+            self.url,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data["detail"],
+            "Landlord role has been added.",
+        )
+        self.assertFalse(
+            response.data["already_landlord"]
+        )
+        self.assertEqual(
+            response.data["roles"],
+            [
+                LANDLORD_GROUP,
+                TENANT_GROUP,
+            ],
+        )
+        self.assertTrue(
+            has_role(
+                self.user,
+                LANDLORD_GROUP,
+            )
+        )
+        self.assertTrue(
+            has_role(
+                self.user,
+                TENANT_GROUP,
+            )
+        )
+
+    def test_become_landlord_is_idempotent(self):
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        first_response = self.client.post(
+            self.url,
+            format="json",
+        )
+        second_response = self.client.post(
+            self.url,
+            format="json",
+        )
+
+        self.assertEqual(
+            first_response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            second_response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertTrue(
+            second_response.data[
+                "already_landlord"
+            ]
+        )
+        self.assertEqual(
+            second_response.data["detail"],
+            "Landlord role is already active.",
+        )
+        self.assertEqual(
+            second_response.data["roles"],
+            [
+                LANDLORD_GROUP,
+                TENANT_GROUP,
+            ],
+        )
+        self.assertEqual(
+            self.user.groups.filter(
+                name=LANDLORD_GROUP
+            ).count(),
+            1,
+        )
 
 
 class ChangePasswordAPITests(AccountsAPITestCase):

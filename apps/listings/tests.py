@@ -3,6 +3,7 @@ from datetime import datetime, time, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
@@ -12,6 +13,7 @@ from rest_framework.test import (
     APITestCase,
 )
 
+from apps.accounts.roles import LANDLORD_GROUP
 from apps.bookings.models import Booking, BlockedPeriod
 from apps.listings.models import (
     Amenity,
@@ -26,6 +28,13 @@ from apps.reviews.models import Review
 User = get_user_model()
 
 
+def assign_landlord_role(user):
+    landlord_group, _ = Group.objects.get_or_create(
+        name=LANDLORD_GROUP,
+    )
+    user.groups.add(landlord_group)
+
+
 class ListingCleaningGapAPITests(APITestCase):
     def setUp(self):
         self.owner = User.objects.create_user(
@@ -35,6 +44,7 @@ class ListingCleaningGapAPITests(APITestCase):
             last_name="Owner",
             phone_number="+491700000031",
         )
+        assign_landlord_role(self.owner)
 
         self.client.force_authenticate(
             user=self.owner
@@ -209,6 +219,17 @@ class ListingCRUDAPITests(APITestCase):
             last_name="User",
             phone_number="+491700000202",
         )
+        self.tenant_user = User.objects.create_user(
+            email="listing.tenant@example.com",
+            password="StrongPass123!",
+            first_name="Listing",
+            last_name="Tenant",
+            phone_number="+491700000203",
+        )
+
+        assign_landlord_role(self.owner)
+        assign_landlord_role(self.other_user)
+
         self.list_url = reverse(
             "listings:listing-list-create"
         )
@@ -315,7 +336,27 @@ class ListingCRUDAPITests(APITestCase):
             0,
         )
 
-    def test_authenticated_user_can_create_draft_listing(
+    def test_tenant_cannot_create_listing(self):
+        self.client.force_authenticate(
+            user=self.tenant_user
+        )
+
+        response = self.client.post(
+            self.list_url,
+            self.listing_payload(),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+        self.assertEqual(
+            Listing.objects.count(),
+            0,
+        )
+
+    def test_landlord_can_create_draft_listing(
         self,
     ):
         self.client.force_authenticate(
@@ -819,6 +860,9 @@ class ListingRelatedAPITestCase(APITestCase):
             phone_number="+491700000303",
             is_staff=True,
         )
+
+        assign_landlord_role(self.owner)
+        assign_landlord_role(self.other_user)
 
     def create_listing(
         self,
@@ -2481,6 +2525,7 @@ class ListingViewAPITests(APITestCase):
             last_name="Owner",
             phone_number="+491700000501",
         )
+        assign_landlord_role(self.owner)
 
         self.guest = User.objects.create_user(
             email="view.guest@example.com",

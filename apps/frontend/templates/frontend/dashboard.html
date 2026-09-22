@@ -10,11 +10,56 @@
 
         <h1>Dashboard</h1>
 
-        <p>
-            Manage your profile, listings and bookings.
+        <p data-role-description>
+            Manage your trips, favorites and booking history.
         </p>
 
-        <div style="margin-top: 22px;">
+        <div
+            class="dashboard-role-switcher"
+            data-role-switcher
+            hidden
+        >
+            <div>
+                <strong>Dashboard mode</strong>
+
+                <p>
+                    Switch between travelling and hosting
+                    without signing in again.
+                </p>
+            </div>
+
+            <div
+                class="dashboard-role-switcher__controls"
+                role="group"
+                aria-label="Dashboard mode"
+            >
+                <button
+                    class="dashboard-role-switcher__button"
+                    type="button"
+                    data-role-button="Tenant"
+                    aria-pressed="false"
+                >
+                    Tenant
+                </button>
+
+                <button
+                    class="dashboard-role-switcher__button"
+                    type="button"
+                    data-role-button="Landlord"
+                    aria-pressed="false"
+                >
+                    Landlord
+                </button>
+            </div>
+
+            <p
+                class="dashboard-role-switcher__message"
+                data-role-message
+                hidden
+            ></p>
+        </div>
+
+        <div class="dashboard-heading-actions">
             <a
                 href="{% url 'frontend:account-settings' %}"
                 class="button button--secondary"
@@ -35,7 +80,11 @@
 
         <div class="dashboard-grid">
 
-            <article class="dashboard-card">
+            <article
+                class="dashboard-card"
+                data-dashboard-role="landlord"
+                hidden
+            >
                 <span
                     id="my-listings-count"
                     class="dashboard-card__number"
@@ -55,7 +104,11 @@
             </article>
 
 
-            <article class="dashboard-card">
+            <article
+                class="dashboard-card"
+                data-dashboard-role="tenant"
+                hidden
+            >
                 <span
                     id="my-bookings-count"
                     class="dashboard-card__number"
@@ -71,7 +124,11 @@
             </article>
 
 
-            <article class="dashboard-card">
+            <article
+                class="dashboard-card"
+                data-dashboard-role="landlord"
+                hidden
+            >
                 <span
                     id="guest-bookings-count"
                     class="dashboard-card__number"
@@ -87,7 +144,11 @@
             </article>
 
 
-            <article class="dashboard-card">
+            <article
+                class="dashboard-card"
+                data-dashboard-role="tenant"
+                hidden
+            >
                 <span
                     id="favorites-count"
                     class="dashboard-card__number"
@@ -113,7 +174,11 @@
              MY LISTINGS
              ===================================================== -->
 
-        <section class="dashboard-section">
+        <section
+            class="dashboard-section"
+            data-dashboard-role="landlord"
+            hidden
+        >
 
             <div class="section-heading">
                 <div>
@@ -153,7 +218,11 @@
              MY ACTIVE BOOKINGS
              ===================================================== -->
 
-        <section class="dashboard-section">
+        <section
+            class="dashboard-section"
+            data-dashboard-role="tenant"
+            hidden
+        >
 
             <div class="section-heading">
                 <div>
@@ -190,7 +259,11 @@
              MY BOOKING HISTORY
              ===================================================== -->
 
-        <section class="dashboard-section dashboard-history-section">
+        <section
+            class="dashboard-section dashboard-history-section"
+            data-dashboard-role="tenant"
+            hidden
+        >
 
             <div class="section-heading">
                 <div>
@@ -234,7 +307,11 @@
              ACTIVE GUEST BOOKINGS
              ===================================================== -->
 
-        <section class="dashboard-section">
+        <section
+            class="dashboard-section"
+            data-dashboard-role="landlord"
+            hidden
+        >
 
             <div class="section-heading">
                 <div>
@@ -271,7 +348,11 @@
              GUEST BOOKING HISTORY
              ===================================================== -->
 
-        <section class="dashboard-section dashboard-history-section">
+        <section
+            class="dashboard-section dashboard-history-section"
+            data-dashboard-role="landlord"
+            hidden
+        >
 
             <div class="section-heading">
                 <div>
@@ -315,6 +396,149 @@
 
 
 <style>
+
+.dashboard-role-switcher[hidden],
+[data-dashboard-role][hidden] {
+    display: none !important;
+}
+
+
+.dashboard-role-switcher {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
+
+    gap: 18px 24px;
+
+    align-items: center;
+
+    max-width: 780px;
+
+    margin-top: 24px;
+    padding: 18px 20px;
+
+    background:
+        var(--color-surface);
+
+    border:
+        1px solid
+        var(--color-border);
+
+    border-radius:
+        var(--border-radius);
+
+    box-shadow:
+        0 8px 25px
+        rgba(31, 64, 55, 0.08);
+}
+
+
+.dashboard-role-switcher strong {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color:
+        var(--color-primary-dark);
+}
+
+
+.dashboard-role-switcher p {
+    margin: 0;
+
+    color:
+        var(--color-text-soft);
+
+    font-size: 14px;
+}
+
+
+.dashboard-role-switcher__controls {
+    display: inline-flex;
+
+    gap: 4px;
+
+    padding: 4px;
+
+    background: #edf3f0;
+
+    border-radius: 999px;
+}
+
+
+.dashboard-role-switcher__button {
+    min-height: 40px;
+
+    padding: 8px 16px;
+
+    color:
+        var(--color-primary-dark);
+
+    background: transparent;
+
+    border: 0;
+    border-radius: 999px;
+
+    font: inherit;
+    font-size: 14px;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+
+.dashboard-role-switcher__button:hover {
+    background:
+        rgba(255, 255, 255, 0.72);
+}
+
+
+.dashboard-role-switcher__button--active {
+    color: #ffffff;
+
+    background:
+        var(--color-primary);
+
+    box-shadow:
+        0 5px 14px
+        rgba(31, 64, 55, 0.18);
+}
+
+
+.dashboard-role-switcher__button--active:hover {
+    background:
+        var(--color-primary-dark);
+}
+
+
+.dashboard-role-switcher__button:disabled {
+    opacity: 0.65;
+
+    cursor: wait;
+}
+
+
+.dashboard-role-switcher__message {
+    grid-column: 1 / -1;
+}
+
+
+.dashboard-role-switcher__message--success {
+    color: #176048 !important;
+}
+
+
+.dashboard-role-switcher__message--error {
+    color: #922f26 !important;
+}
+
+
+.dashboard-heading-actions {
+    margin-top: 22px;
+}
+
 
 .dashboard-section {
     margin-top: 60px;
@@ -829,6 +1053,20 @@
 
 @media (max-width: 750px) {
 
+    .dashboard-role-switcher {
+        grid-template-columns: 1fr;
+    }
+
+
+    .dashboard-role-switcher__controls {
+        width: 100%;
+    }
+
+
+    .dashboard-role-switcher__button {
+        flex: 1;
+    }
+
     .booking-card {
         grid-template-columns:
             100px
@@ -950,6 +1188,35 @@ document.addEventListener(
         const guestBookingHistory =
             document.getElementById(
                 "guest-booking-history"
+            );
+
+        const roleSwitcher =
+            document.querySelector(
+                "[data-role-switcher]"
+            );
+
+        const roleDescription =
+            document.querySelector(
+                "[data-role-description]"
+            );
+
+        const roleMessage =
+            document.querySelector(
+                "[data-role-message]"
+            );
+
+        const roleButtons =
+            Array.from(
+                document.querySelectorAll(
+                    "[data-role-button]"
+                )
+            );
+
+        const dashboardRoleBlocks =
+            Array.from(
+                document.querySelectorAll(
+                    "[data-dashboard-role]"
+                )
             );
 
 
@@ -1286,7 +1553,8 @@ document.addEventListener(
         if (
             !window.TernNestAuth ||
             !window.TernNestAuth
-                .authenticatedFetch
+                .authenticatedFetch ||
+            !window.TernNestRoleMode
         ) {
             return;
         }
@@ -1307,14 +1575,22 @@ document.addEventListener(
         }
 
 
-        const userResponse =
-            await window.TernNestAuth
-                .authenticatedFetch(
-                    "/api/v1/accounts/me/"
-                );
+        let roleState = null;
 
 
-        if (!userResponse.ok) {
+        try {
+            roleState =
+                await window.TernNestRoleMode
+                    .initialize();
+        } catch (error) {
+            console.error(
+                "Dashboard role loading error:",
+                error
+            );
+        }
+
+
+        if (!roleState || !roleState.user) {
 
             window.location.href =
                 "/login/?next=/dashboard/";
@@ -1323,8 +1599,222 @@ document.addEventListener(
         }
 
 
-        const currentUser =
-            await userResponse.json();
+        let currentUser =
+            roleState.user;
+
+
+        function currentUserHasRole(role) {
+            return window.TernNestRoleMode
+                .hasRole(
+                    currentUser,
+                    role
+                );
+        }
+
+
+        function hideRoleMessage() {
+            roleMessage.hidden = true;
+            roleMessage.textContent = "";
+            roleMessage.className =
+                "dashboard-role-switcher__message";
+        }
+
+
+        function showRoleMessage(
+            text,
+            type
+        ) {
+            roleMessage.hidden = false;
+            roleMessage.textContent = text;
+            roleMessage.className =
+                (
+                    "dashboard-role-switcher__message "
+                    +
+                    `dashboard-role-switcher__message--${type}`
+                );
+        }
+
+
+        function applyDashboardRole(role) {
+            const dashboardRole =
+                role === "Landlord"
+                    ? "landlord"
+                    : "tenant";
+
+
+            dashboardRoleBlocks.forEach(
+                element => {
+                    element.hidden =
+                        element.dataset.dashboardRole
+                        !== dashboardRole;
+                }
+            );
+
+
+            roleButtons.forEach(
+                button => {
+                    const buttonRole =
+                        button.dataset.roleButton;
+
+                    const isActive =
+                        buttonRole === role;
+
+                    button.classList.toggle(
+                        "dashboard-role-switcher__button--active",
+                        isActive
+                    );
+
+                    button.setAttribute(
+                        "aria-pressed",
+                        String(isActive)
+                    );
+
+                    if (
+                        buttonRole === "Landlord"
+                    ) {
+                        button.textContent =
+                            currentUserHasRole(
+                                "Landlord"
+                            )
+                                ? "Landlord"
+                                : "Become a landlord";
+                    }
+                }
+            );
+
+
+            roleDescription.textContent =
+                dashboardRole === "landlord"
+                    ? (
+                        "Manage your listings, availability "
+                        +
+                        "and guest reservations."
+                    )
+                    : (
+                        "Manage your trips, favorites "
+                        +
+                        "and booking history."
+                    );
+
+
+            roleSwitcher.hidden = false;
+        }
+
+
+        roleButtons.forEach(
+            button => {
+                button.addEventListener(
+                    "click",
+                    async () => {
+                        const requestedRole =
+                            button.dataset.roleButton;
+
+
+                        hideRoleMessage();
+
+
+                        if (
+                            requestedRole === "Tenant"
+                        ) {
+                            window.TernNestRoleMode
+                                .setActiveRole(
+                                    "Tenant"
+                                );
+
+                            return;
+                        }
+
+
+                        if (
+                            currentUserHasRole(
+                                "Landlord"
+                            )
+                        ) {
+                            window.TernNestRoleMode
+                                .setActiveRole(
+                                    "Landlord"
+                                );
+
+                            return;
+                        }
+
+
+                        roleButtons.forEach(
+                            roleButton => {
+                                roleButton.disabled =
+                                    true;
+                            }
+                        );
+
+                        button.textContent =
+                            "Activating...";
+
+
+                        try {
+                            const result =
+                                await window
+                                    .TernNestRoleMode
+                                    .becomeLandlord();
+
+                            currentUser =
+                                result.user;
+
+                            showRoleMessage(
+                                (
+                                    "Landlord mode is active. "
+                                    +
+                                    "You can now create listings."
+                                ),
+                                "success"
+                            );
+                        } catch (error) {
+                            showRoleMessage(
+                                error.data
+                                    ? formatErrors(
+                                        error.data
+                                    )
+                                    : error.message,
+                                "error"
+                            );
+
+                            applyDashboardRole(
+                                window
+                                    .TernNestRoleMode
+                                    .getState()
+                                    .activeRole
+                            );
+                        } finally {
+                            roleButtons.forEach(
+                                roleButton => {
+                                    roleButton.disabled =
+                                        false;
+                                }
+                            );
+                        }
+                    }
+                );
+            }
+        );
+
+
+        window.addEventListener(
+            "ternnest:rolechange",
+            event => {
+                if (event.detail.user) {
+                    currentUser =
+                        event.detail.user;
+                }
+
+                applyDashboardRole(
+                    event.detail.activeRole
+                );
+            }
+        );
+
+
+        applyDashboardRole(
+            roleState.activeRole
+        );
 
 
         /* =====================================================

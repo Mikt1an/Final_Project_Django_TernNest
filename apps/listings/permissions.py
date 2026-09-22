@@ -3,6 +3,11 @@ from rest_framework.permissions import (
     SAFE_METHODS,
 )
 
+from apps.accounts.roles import (
+    LANDLORD_GROUP,
+    TENANT_GROUP,
+    has_role,
+)
 from apps.listings.models import Listing
 
 
@@ -13,7 +18,39 @@ class IsAdminOrReadOnly(BasePermission):
         if request.method in SAFE_METHODS:
             return True
 
-        return request.user.is_authenticated and request.user.is_staff
+        return (
+            request.user.is_authenticated
+            and request.user.is_staff
+        )
+
+
+class IsLandlordOrReadOnly(BasePermission):
+    message = (
+        "Only users with the Landlord role "
+        "can manage listings."
+    )
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+
+        return has_role(
+            request.user,
+            LANDLORD_GROUP,
+        )
+
+
+class IsTenant(BasePermission):
+    message = (
+        "Only users with the Tenant role "
+        "can use this feature."
+    )
+
+    def has_permission(self, request, view):
+        return has_role(
+            request.user,
+            TENANT_GROUP,
+        )
 
 
 class IsListingOwnerOrReadOnly(BasePermission):
@@ -29,7 +66,10 @@ class IsListingOwnerOrReadOnly(BasePermission):
         if request.method in SAFE_METHODS:
             return True
 
-        return request.user.is_authenticated and obj.owner_id == request.user.id
+        return (
+            request.user.is_authenticated
+            and obj.owner_id == request.user.id
+        )
 
 
 class IsListingImageOwnerOrReadOnly(BasePermission):
@@ -51,7 +91,10 @@ class IsListingImageOwnerOrReadOnly(BasePermission):
             if listing_id is None:
                 return True
 
-            return Listing.objects.filter(pk=listing_id, owner_id=request.user.id,).exists()
+            return Listing.objects.filter(
+                pk=listing_id,
+                owner_id=request.user.id,
+            ).exists()
 
         return True
 
@@ -59,7 +102,10 @@ class IsListingImageOwnerOrReadOnly(BasePermission):
         if request.method in SAFE_METHODS:
             return True
 
-        return request.user.is_authenticated and obj.listing.owner_id == request.user.id
+        return (
+            request.user.is_authenticated
+            and obj.listing.owner_id == request.user.id
+        )
 
 
 class IsFavoriteOwner(BasePermission):
@@ -69,4 +115,7 @@ class IsFavoriteOwner(BasePermission):
         return request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        return obj.user_id == request.user.id
+        return (
+            request.user.is_authenticated
+            and obj.user_id == request.user.id
+        )

@@ -1,0 +1,77 @@
+services:
+  db:
+    image: container-registry.oracle.com/mysql/community-server:8.4
+    container_name: ternnest_mysql
+    restart: unless-stopped
+
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+    ports:
+      - "127.0.0.1:3306:3306"
+
+    volumes:
+      - ternnest_mysql_data:/var/lib/mysql
+
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+
+    healthcheck:
+      test:
+        - CMD
+        - mysqladmin
+        - ping
+        - -h
+        - 127.0.0.1
+        - --silent
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: ternnest-web:local
+    container_name: ternnest_web
+    restart: unless-stopped
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    environment:
+      SECRET_KEY: "${SECRET_KEY}"
+      DEBUG: "${DEBUG:-True}"
+      ALLOWED_HOSTS: "${ALLOWED_HOSTS:-localhost,127.0.0.1}"
+
+      API_VERSION: "${API_VERSION:-v1}"
+      API_PREFIX: "${API_PREFIX:-api}"
+
+      MYSQL: "True"
+      MYSQL_DATABASE: "${MYSQL_DATABASE}"
+      MYSQL_USER: "${MYSQL_USER}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      MYSQL_HOST: "db"
+      MYSQL_PORT: "3306"
+
+      DJANGO_LANGUAGE_CODE: "${DJANGO_LANGUAGE_CODE:-en-us}"
+      DJANGO_TIME_ZONE: "${DJANGO_TIME_ZONE:-UTC}"
+      AI_AGENT_ENABLED: "${AI_AGENT_ENABLED:-False}"
+
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    volumes:
+      - ./media:/app/media
+      - ternnest_static_data:/app/staticfiles
+
+volumes:
+  ternnest_mysql_data:
+  ternnest_static_data:

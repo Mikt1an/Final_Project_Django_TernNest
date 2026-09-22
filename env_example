@@ -24,10 +24,13 @@ API_PREFIX=api
 
 MYSQL=False
 
-MYSQL_DATABASE=your_database
-MYSQL_USER=your_user
-MYSQL_PASSWORD=your_password
-MYSQL_HOST=localhost
+MYSQL_DATABASE=ternnest
+MYSQL_USER=ternnest_app
+MYSQL_PASSWORD=1password
+MYSQL_ROOT_PASSWORD=2password
+#python -c "import secrets; print(secrets.token_urlsafe(32))"
+#python -c "import secrets; print(secrets.token_urlsafe(32))"
+MYSQL_HOST=127.0.0.1
 MYSQL_PORT=3306
 
 # ============================================================

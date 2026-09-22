@@ -22,6 +22,8 @@ class UserPublicSerializer(serializers.ModelSerializer):
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
+    roles = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
@@ -33,10 +35,21 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "birth_date",
             "avatar",
             "is_verified",
+            "roles",
             "created_at",
             "updated_at",
         )
         read_only_fields = fields
+
+    def get_roles(self, obj):
+        return list(
+            obj.groups
+            .order_by("name")
+            .values_list(
+                "name",
+                flat=True,
+            )
+        )
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
@@ -93,9 +106,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, trim_whitespace=False,)
+    password = serializers.CharField(
+        write_only=True,
+        trim_whitespace=False,
+    )
 
-    password_confirm = serializers.CharField(write_only=True, trim_whitespace=False,)
+    password_confirm = serializers.CharField(
+        write_only=True,
+        trim_whitespace=False,
+    )
 
     class Meta:
         model = User
@@ -172,28 +191,36 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         password = validated_data.pop("password")
 
-        return User.objects.create_user(password=password, **validated_data,)
+        return User.objects.create_user(
+            password=password,
+            **validated_data,
+        )
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    current_password = serializers.CharField(write_only=True, trim_whitespace=False,)
+    current_password = serializers.CharField(
+        write_only=True,
+        trim_whitespace=False,
+    )
 
-    new_password = serializers.CharField(write_only=True, trim_whitespace=False,)
+    new_password = serializers.CharField(
+        write_only=True,
+        trim_whitespace=False,
+    )
 
-    new_password_confirm = serializers.CharField(write_only=True, trim_whitespace=False,)
+    new_password_confirm = serializers.CharField(
+        write_only=True,
+        trim_whitespace=False,
+    )
 
     def validate(self, attrs):
         user = self.context["request"].user
 
         current_password = attrs["current_password"]
-
         new_password = attrs["new_password"]
-
         new_password_confirm = attrs["new_password_confirm"]
 
-        if not user.check_password(
-            current_password
-        ):
+        if not user.check_password(current_password):
             raise serializers.ValidationError(
                 {
                     "current_password": (
@@ -202,10 +229,7 @@ class ChangePasswordSerializer(serializers.Serializer):
                 }
             )
 
-        if (
-            new_password
-            != new_password_confirm
-        ):
+        if new_password != new_password_confirm:
             raise serializers.ValidationError(
                 {
                     "new_password_confirm": (
@@ -215,7 +239,10 @@ class ChangePasswordSerializer(serializers.Serializer):
             )
 
         try:
-            validate_password(new_password, user=user,)
+            validate_password(
+                new_password,
+                user=user,
+            )
         except DjangoValidationError as error:
             raise serializers.ValidationError(
                 {

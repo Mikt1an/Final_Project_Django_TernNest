@@ -42,7 +42,7 @@ def get_booking_queryset():
 
 
 class BookingListCreateView(ListCreateAPIView):
-    permission_classes = (IsAuthenticated, CanCreateBooking,)
+    permission_classes = [IsAuthenticated, CanCreateBooking,]
 
     def get_queryset(self):
         return get_booking_queryset().filter(Q(guest=self.request.user) | Q(listing__owner=self.request.user)).distinct()
@@ -59,7 +59,7 @@ class BookingListCreateView(ListCreateAPIView):
 
 class BookingDetailView(RetrieveAPIView):
     serializer_class = BookingReadSerializer
-    permission_classes = (IsAuthenticated, IsBookingParticipant,)
+    permission_classes = [IsAuthenticated, IsBookingParticipant,]
 
     def get_queryset(self):
         return get_booking_queryset().filter(Q(guest=self.request.user) | Q(listing__owner=self.request.user)).distinct()
@@ -80,7 +80,7 @@ class BookingActionView(APIView):
 
 
 class BookingCancelView(BookingActionView):
-    permission_classes = (IsAuthenticated, IsBookingGuest | IsBookingListingOwner,)
+    permission_classes = [IsAuthenticated, IsBookingGuest | IsBookingListingOwner,]
 
     def validate_guest_cancellation(self, booking,):
         if booking.status not in (Booking.Status.PENDING, Booking.Status.CONFIRMED,):
@@ -144,7 +144,7 @@ class BookingCancelView(BookingActionView):
 
 
 class BookingRejectView(BookingActionView):
-    permission_classes = (IsAuthenticated, IsBookingListingOwner,)
+    permission_classes = [IsAuthenticated, IsBookingListingOwner,]
 
     def post(self, request, *args, **kwargs):
         booking = self.get_booking()
@@ -166,7 +166,7 @@ class BookingRejectView(BookingActionView):
 
 
 class BookingConfirmView(BookingActionView):
-    permission_classes = (IsAuthenticated, IsBookingListingOwner,)
+    permission_classes = [IsAuthenticated, IsBookingListingOwner,]
 
     def post(self, request, *args, **kwargs):
         booking = self.get_booking()
@@ -188,7 +188,7 @@ class BookingConfirmView(BookingActionView):
 
 
 class BookingCompleteView(BookingActionView):
-    permission_classes = (IsAuthenticated, IsBookingListingOwner,)
+    permission_classes = [IsAuthenticated, IsBookingListingOwner,]
 
     def post(self, request, *args, **kwargs):
         booking = self.get_booking()
@@ -221,7 +221,7 @@ class BookingCompleteView(BookingActionView):
 
 class BlockedPeriodListCreateView(ListCreateAPIView):
     serializer_class = BlockedPeriodSerializer
-    permission_classes = (IsAuthenticated, IsBlockedPeriodListingOwner,)
+    permission_classes = [IsAuthenticated, IsBlockedPeriodListingOwner,]
 
     def get_queryset(self):
         return BlockedPeriod.objects.filter(listing__owner=self.request.user,).select_related("listing", "listing__owner",)
@@ -229,7 +229,7 @@ class BlockedPeriodListCreateView(ListCreateAPIView):
 
 class BlockedPeriodDetailView(RetrieveUpdateDestroyAPIView,):
     serializer_class = BlockedPeriodSerializer
-    permission_classes = (IsAuthenticated, IsBlockedPeriodListingOwner,)
+    permission_classes = [IsAuthenticated, IsBlockedPeriodListingOwner,]
 
     def get_queryset(self):
         return BlockedPeriod.objects.filter(listing__owner=self.request.user,).select_related("listing", "listing__owner",)

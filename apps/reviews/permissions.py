@@ -100,10 +100,7 @@ class IsReviewImageAuthorOrReadOnly(BasePermission):
             if review is None:
                 return True
 
-            return (
-                review.booking.guest_id
-                == request.user.id
-            )
+            return review.booking.guest_id == request.user.id
 
         return True
 
@@ -111,7 +108,4 @@ class IsReviewImageAuthorOrReadOnly(BasePermission):
         if request.method in SAFE_METHODS:
             return True
 
-        return (
-            obj.review.booking.guest_id
-            == request.user.id
-        )
+        return obj.review.booking.guest_id == request.user.id
