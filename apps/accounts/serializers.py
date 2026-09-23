@@ -124,6 +124,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "phone_number",
+            "birth_date",
             "password",
             "password_confirm",
         )

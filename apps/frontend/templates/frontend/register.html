@@ -15,7 +15,12 @@
                     </p>
                 </div>
 
-                <form id="register-form" class="form-grid">
+                <form
+                    id="register-form"
+                    class="form-grid"
+                    method="post"
+                    action="{% url 'accounts:register' %}"
+                >
                     <label class="form-field">
                         <span>First name</span>
 
@@ -57,8 +62,8 @@
 
                         <input
                             type="tel"
-                            name="phone"
-                            placeholder="+49 123 456789"
+                            name="phone_number"
+                            placeholder="+491701234567"
                             autocomplete="tel"
                             required
                         >
@@ -69,7 +74,7 @@
 
                         <input
                             type="date"
-                            name="birthday"
+                            name="birth_date"
                             autocomplete="bday"
                         >
                     </label>
@@ -103,12 +108,16 @@
                     <div
                         id="register-message"
                         class="form-message form-field--full"
+                        role="status"
+                        aria-live="polite"
+                        style="white-space: pre-line;"
                         hidden
                     ></div>
 
                     <button
+                        id="register-submit-button"
                         class="button button--primary button--full form-field--full"
-                        type="button"
+                        type="submit"
                     >
                         Create account
                     </button>
@@ -124,4 +133,122 @@
             </div>
         </div>
     </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("register-form");
+    const message = document.getElementById("register-message");
+    const submitButton = document.getElementById(
+        "register-submit-button"
+    );
+
+    if (!form || !message || !submitButton) {
+        return;
+    }
+
+    function showMessage(text, type) {
+        message.textContent = text;
+        message.className =
+            `form-message form-message--${type} form-field--full`;
+        message.hidden = false;
+    }
+
+    function getErrorMessage(data, status) {
+        if (data && typeof data === "object") {
+            const messages = Object.entries(data).map(
+                ([field, errors]) => {
+                    const text = Array.isArray(errors)
+                        ? errors.join(" ")
+                        : String(errors);
+
+                    return `${field}: ${text}`;
+                }
+            );
+
+            if (messages.length) {
+                return messages.join("\n");
+            }
+        }
+
+        return `Registration failed (${status}). Please try again.`;
+    }
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        if (submitButton.disabled) {
+            return;
+        }
+
+        message.hidden = true;
+
+        if (!form.reportValidity()) {
+            return;
+        }
+
+        const payload = Object.fromEntries(new FormData(form));
+
+        payload.first_name = payload.first_name.trim();
+        payload.last_name = payload.last_name.trim();
+        payload.email = payload.email.trim();
+        payload.phone_number = payload.phone_number.replace(/\s+/g, "");
+
+        if (!payload.birth_date) {
+            delete payload.birth_date;
+        }
+
+        if (payload.password !== payload.password_confirm) {
+            showMessage("Passwords do not match.", "error");
+            return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "Creating account...";
+
+        let registered = false;
+
+        try {
+            const response = await fetch(form.action, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (response.status !== 201) {
+                showMessage(
+                    getErrorMessage(data, response.status),
+                    "error"
+                );
+                return;
+            }
+
+            registered = true;
+
+            showMessage(
+                "Account created successfully. Redirecting to login...",
+                "success"
+            );
+
+            window.location.assign("{% url 'frontend:login' %}");
+        } catch (error) {
+            showMessage(
+                "Could not connect to the server. Please try again.",
+                "error"
+            );
+        } finally {
+            if (!registered) {
+                submitButton.disabled = false;
+                submitButton.textContent = "Create account";
+            }
+        }
+    });
+});
+</script>
 {% endblock %}
