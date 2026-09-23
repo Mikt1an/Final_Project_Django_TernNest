@@ -3,7 +3,10 @@ from django.contrib.auth.models import AbstractUser
 
 from apps.core.models import TimeStampedModel
 from apps.accounts.managers import UserManager
-from apps.accounts.validators import phone_number_validator
+from apps.accounts.validators import (
+    phone_number_validator,
+    validate_birth_date,
+)
 
 
 # Create your models here.
@@ -14,7 +17,11 @@ class User(AbstractUser, TimeStampedModel):
     last_name = models.CharField(max_length=150,)
     email = models.EmailField(unique=True,)
     phone_number = models.CharField(max_length=16, unique=True, validators=[phone_number_validator],)
-    birth_date = models.DateField(null=True, blank=True,)
+    birth_date = models.DateField(
+        null=True,
+        blank=True,
+        validators=[validate_birth_date],
+    )
 
     avatar = models.ImageField(upload_to="users/avatars/", null=True, blank=True,)
 
