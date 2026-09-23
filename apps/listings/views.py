@@ -90,45 +90,31 @@ def get_visible_listings(user):
             .distinct()
         )
 
-    return queryset.filter(
-        is_active=True,
-    )
+    return queryset.filter(is_active=True,)
 
 
 class AmenityListCreateView(ListCreateAPIView):
     queryset = Amenity.objects.all()
     serializer_class = AmenitySerializer
-    permission_classes = [
-        IsAdminOrReadOnly,
-    ]
+    permission_classes = [IsAdminOrReadOnly,]
 
 
 class AmenityDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Amenity.objects.all()
     serializer_class = AmenitySerializer
-    permission_classes = [
-        IsAdminOrReadOnly,
-    ]
+    permission_classes = [IsAdminOrReadOnly,]
 
 
 class ListingListCreateView(ListCreateAPIView):
-    permission_classes = [
-        IsLandlordOrReadOnly,
-        IsListingOwnerOrReadOnly,
-    ]
+    permission_classes = [IsLandlordOrReadOnly, IsListingOwnerOrReadOnly,]
 
     def get_queryset(self):
-        queryset = get_visible_listings(
-            self.request.user
-        )
+        queryset = get_visible_listings(self.request.user)
 
         if self.request.method != "GET":
             return queryset
 
-        return filter_listings(
-            queryset,
-            self.request.query_params,
-        )
+        return filter_listings(queryset, self.request.query_params,)
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -137,37 +123,21 @@ class ListingListCreateView(ListCreateAPIView):
         return ListingWriteSerializer
 
     def list(self, request, *args, **kwargs):
-        response = super().list(
-            request,
-            *args,
-            **kwargs,
-        )
+        response = super().list(request, *args, **kwargs,)
 
-        record_search_query(
-            request=request,
-            query=request.query_params.get(
-                "search"
-            ),
-        )
+        record_search_query(request=request, query=request.query_params.get("search"),)
 
         return response
 
     def perform_create(self, serializer):
-        serializer.save(
-            owner=self.request.user
-        )
+        serializer.save(owner=self.request.user)
 
 
 class ListingDetailView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [
-        IsLandlordOrReadOnly,
-        IsListingOwnerOrReadOnly,
-    ]
+    permission_classes = [IsLandlordOrReadOnly, IsListingOwnerOrReadOnly,]
 
     def get_queryset(self):
-        return get_visible_listings(
-            self.request.user
-        )
+        return get_visible_listings(self.request.user)
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -178,10 +148,7 @@ class ListingDetailView(RetrieveUpdateDestroyAPIView):
     def retrieve(self, request, *args, **kwargs):
         listing = self.get_object()
 
-        created = record_listing_view(
-            listing=listing,
-            request=request,
-        )
+        created = record_listing_view(listing=listing, request=request,)
 
         if created:
             current_count = getattr(
@@ -195,13 +162,9 @@ class ListingDetailView(RetrieveUpdateDestroyAPIView):
                     current_count + 1
                 )
 
-        serializer = self.get_serializer(
-            listing
-        )
+        serializer = self.get_serializer(listing)
 
-        return Response(
-            serializer.data
-        )
+        return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
         listing = self.get_object()
@@ -234,10 +197,7 @@ class ListingDetailView(RetrieveUpdateDestroyAPIView):
 
 class ListingImageListCreateView(ListCreateAPIView):
     serializer_class = ListingImageSerializer
-    permission_classes = [
-        IsLandlordOrReadOnly,
-        IsListingOwnerOrReadOnly,
-    ]
+    permission_classes = [IsLandlordOrReadOnly, IsListingOwnerOrReadOnly,]
 
     def get_listing(self):
         queryset = Listing.objects.select_related(
@@ -282,10 +242,7 @@ class ListingImageDetailView(
     RetrieveUpdateDestroyAPIView
 ):
     serializer_class = ListingImageSerializer
-    permission_classes = [
-        IsLandlordOrReadOnly,
-        IsListingImageOwnerOrReadOnly,
-    ]
+    permission_classes = [IsLandlordOrReadOnly, IsListingImageOwnerOrReadOnly,]
 
     def get_queryset(self):
         queryset = (
@@ -320,10 +277,7 @@ class ListingImageDetailView(
 
 class FavoriteListCreateView(ListCreateAPIView):
     serializer_class = FavoriteSerializer
-    permission_classes = [
-        IsTenant,
-        IsFavoriteOwner,
-    ]
+    permission_classes = [IsTenant, IsFavoriteOwner,]
 
     def get_queryset(self):
         return (
@@ -338,9 +292,7 @@ class FavoriteListCreateView(ListCreateAPIView):
         )
 
     def perform_create(self, serializer):
-        listing = serializer.validated_data[
-            "listing"
-        ]
+        listing = serializer.validated_data["listing"]
 
         favorite_exists = (
             Favorite.objects
@@ -361,17 +313,12 @@ class FavoriteListCreateView(ListCreateAPIView):
                 }
             )
 
-        serializer.save(
-            user=self.request.user
-        )
+        serializer.save(user=self.request.user)
 
 
 class FavoriteDetailView(DestroyAPIView):
     serializer_class = FavoriteSerializer
-    permission_classes = [
-        IsTenant,
-        IsFavoriteOwner,
-    ]
+    permission_classes = [IsTenant, IsFavoriteOwner,]
 
     def get_queryset(self):
         return (
